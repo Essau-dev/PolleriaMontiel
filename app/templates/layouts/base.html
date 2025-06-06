@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Gestión para Pollería Montiel">
+    <!-- CSRF Token (si lo usas con JS para AJAX POST/PUT/DELETE) -->
+    <!-- <meta name="csrf-token" content="{{ csrf_token() }}"> -->
+    <title>{% block title %}SGPM - Pollería Montiel{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+    {% block head_css %}{% endblock %}
+</head>
+<body>
+    {% include 'layouts/_nav.html' %}
+
+    <main class="container">
+        {# Contenedor para mensajes flash generados por JS si es necesario #}
+        <div id="js-flash-container"></div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert--{{ category if category in ['success', 'error', 'info', 'warning'] else 'info' }}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}
+        <!-- El contenido específico de cada página irá aquí -->
+        <h1 class="card__title">Bienvenido al Sistema de Gestión de Pollería Montiel</h1>
+        <p>Esta es la página base. El contenido se cargará aquí.</p>
+        {% endblock %}
+    </main>
+
+    {% include 'layouts/_footer.html' %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block body_scripts %}{% endblock %}
+</body>
+</html>

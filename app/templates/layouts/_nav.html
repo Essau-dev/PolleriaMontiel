@@ -1,0 +1,105 @@
+
+<header class="site-header">
+    <div class="container">
+        <a href="{{ url_for('main.index') }}" class="site-header__logo">🐔 Pollería Montiel</a>
+        <nav class="site-header__nav">
+            <ul>
+                {% if current_user and current_user.is_authenticated %}
+                    <li><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                    <li><a href="{{ url_for('pedidos.listar_pedidos') if 'pedidos.listar_pedidos' in config['ROUTES'] else '#' }}">Pedidos</a></li>
+                    <li><a href="{{ url_for('caja.dashboard_caja') if 'caja.dashboard_caja' in config['ROUTES'] else '#' }}">Caja</a></li>
+                    
+                    {% if current_user.has_role('ADMINISTRADOR') %}
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle">Admin ▾</a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{{ url_for('clientes.listar_clientes') if 'clientes.listar_clientes' in config['ROUTES'] else '#' }}">Clientes</a></li>
+                                <li><a href="{{ url_for('productos.listar_productos') if 'productos.listar_productos' in config['ROUTES'] else '#' }}">Productos</a></li>
+                                <li><a href="{{ url_for('auth.listar_usuarios') if 'auth.listar_usuarios' in config['ROUTES'] else '#' }}">Usuarios</a></li>
+                                <!-- <li><a href="#">Configuración</a></li> -->
+                            </ul>
+                        </li>
+                    {% endif %}
+                    <li><a href="{{ url_for('auth.logout') }}">Cerrar Sesión ({{ current_user.username }})</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('auth.login') }}">Iniciar Sesión</a></li>
+                    <!-- <li><a href="{{ url_for('auth.registro_usuario') }}">Registrar (Admin)</a></li> -->
+                {% endif %}
+            </ul>
+        </nav>
+        <!-- Podrías añadir un botón de menú hamburguesa para móviles aquí -->
+    </div>
+</header>
+<style>
+/* Estilos básicos para dropdown en nav (mejorar según sea necesario) */
+.site-header__nav .dropdown {
+    position: relative;
+}
+.site-header__nav .dropdown-toggle::after {
+    /* content: ' ▼'; */ /* Se añade directamente en el HTML para más control */
+    display: inline-block;
+    margin-left: .255em;
+    vertical-align: .255em;
+}
+.site-header__nav .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: var(--z-index-dropdown);
+    min-width: 10rem;
+    padding: .5rem 0;
+    margin: .125rem 0 0;
+    font-size: 1rem;
+    color: var(--gris-oscuro);
+    text-align: left;
+    list-style: none;
+    background-color: var(--blanco);
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.15);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--sombra-md);
+}
+.site-header__nav .dropdown-menu a {
+    display: block;
+    width: 100%;
+    padding: .5rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: var(--gris-oscuro);
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+}
+.site-header__nav .dropdown-menu a:hover {
+    color: var(--rojo-principal);
+    background-color: var(--gris-muy-claro);
+    text-decoration: none;
+}
+.site-header__nav .dropdown:hover .dropdown-menu {
+    display: block;
+}
+</style>
+<script>
+// Pequeño script para el dropdown si se prefiere control JS en lugar de :hover
+// document.addEventListener('DOMContentLoaded', function() {
+//     const dropdowns = document.querySelectorAll('.site-header__nav .dropdown');
+//     dropdowns.forEach(function(dropdown) {
+//         const toggle = dropdown.querySelector('.dropdown-toggle');
+//         const menu = dropdown.querySelector('.dropdown-menu');
+//         if (toggle && menu) {
+//             toggle.addEventListener('click', function(event) {
+//                 event.preventDefault();
+//                 menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+//             });
+//             // Opcional: cerrar si se hace clic fuera
+//             document.addEventListener('click', function(event) {
+//                 if (!dropdown.contains(event.target)) {
+//                     menu.style.display = 'none';
+//                 }
+//             });
+//         }
+//     });
+// });
+</script>

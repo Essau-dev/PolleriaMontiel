@@ -1,0 +1,35 @@
+
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %}
+
+{% block title %}Registrar Usuario - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h2 class="card__title mb-0">Registrar Nuevo Usuario</h2>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('auth.registro_usuario') }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+                    
+                    {{ render_field(form.nombre_completo, placeholder="Nombre y apellidos del empleado") }}
+                    {{ render_field(form.username, placeholder="Nombre de usuario para el sistema (corto, sin espacios)") }}
+                    {{ render_field(form.password, placeholder="Contraseña (mínimo 8 caracteres)") }}
+                    {{ render_field(form.password2, placeholder="Confirma la contraseña") }}
+                    {{ render_field(form.rol) }}
+                    
+                    <div class="form-group form-check mb-m">
+                        {{ form.activo(class="form-check-input") }}
+                        {{ form.activo.label(class="form-check-label") }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn--primary btn-block">Registrar Usuario</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

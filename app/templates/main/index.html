@@ -1,0 +1,31 @@
+
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Ejemplo de cómo importar macros #}
+
+{% block title %}Inicio - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">Dashboard Principal</h1>
+    </div>
+    <div class="card__body">
+        <p>Bienvenido al Sistema de Gestión de {{ config.NOMBRE_NEGOCIO }}, {{ current_user.nombre_completo if current_user and current_user.is_authenticated else "Invitado" }}!</p>
+        
+        {% if current_user and current_user.is_authenticated %}
+            <p>Tu rol es: <strong>{{ current_user.rol }}</strong>.</p>
+            <p>Desde aquí podrás acceder a las principales funcionalidades del sistema.</p>
+            
+            <div class="d-flex" style="gap: 1rem; margin-top: 1.5rem;">
+                <a href="{{ url_for('pedidos.crear_pedido') if 'pedidos.crear_pedido' in config['ROUTES'] else '#' }}" class="btn btn--primary btn--lg">Nuevo Pedido</a>
+                <a href="{{ url_for('caja.registrar_movimiento') if 'caja.registrar_movimiento' in config['ROUTES'] else '#' }}" class="btn btn--secondary btn--lg">Movimiento de Caja</a>
+            </div>
+        {% else %}
+            <p>Por favor, <a href="{{ url_for('auth.login') }}">inicia sesión</a> para continuar.</p>
+        {% endif %}
+    </div>
+</div>
+
+{# Aquí podrían ir widgets o resúmenes del dashboard #}
+
+{% endblock %}
