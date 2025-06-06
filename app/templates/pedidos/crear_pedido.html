@@ -1,0 +1,574 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10"> {# Usar clases de grid para centrar y limitar ancho #}
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+            </div>
+            <div class="card__body">
+                <form id="pedido-form" method="POST" action="{{ url_for('pedidos.crear_pedido') }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# Sección de Datos del Cliente #}
+                    <h2 class="card__subtitle mt-m">Datos del Cliente</h2>
+                    <div class="row"> {# Usar grid para layout #}
+                        <div class="col-md-6">
+                            {# Campo de búsqueda de cliente (requiere JS/AJAX) #}
+                            <div class="form-group">
+                                <label class="form-label" for="cliente_search">Buscar Cliente (Nombre, Teléfono, Alias)</label>
+                                <input type="text" id="cliente_search" class="form-control" placeholder="Escribe para buscar...">
+                                {# Campo oculto para almacenar el ID del cliente seleccionado #}
+                                {{ form.cliente_id(class="form-control", type="hidden") }}
+                                {# Área para mostrar resultados de búsqueda y cliente seleccionado #}
+                                <div id="cliente_search_results" class="search-results-dropdown"></div> {# Definir estilos en CSS #}
+                                <div id="cliente_selected_info" class="mt-s"></div> {# Mostrar info del cliente seleccionado #}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {# Selector de dirección de entrega (dinámico, requiere JS/AJAX si el cliente tiene varias) #}
+                            {# Para MVP simple, si se selecciona cliente, mostrar sus direcciones principales o un selector #}
+                            <div class="form-group">
+                                <label class="form-label" for="direccion_entrega_id">Dirección de Entrega (si aplica)</label>
+                                {{ form.direccion_entrega_id(class="form-control") }} {# Este SelectField se poblará con JS #}
+                                {# Opcional: Botón para añadir nueva dirección si el cliente está seleccionado #}
+                                {# <button type="button" class="btn btn--secondary btn--sm mt-s" id="add_direccion_btn">Añadir Nueva Dirección</button> #}
+                            </div>
+                        </div>
+                    </div>
+                    {# Opcional: Campos para alta rápida de cliente si no se encuentra (inicialmente ocultos) #}
+                    {#
+                    <div id="new_client_fields" style="display: none;">
+                        <h3 class="card__subtitle mt-m">Registrar Nuevo Cliente</h3>
+                        {{ render_field(form.new_cliente_nombre, class="form-control") }}
+                        {{ render_field(form.new_cliente_apellidos, class="form-control") }}
+                        {{ render_field(form.new_cliente_alias, class="form-control") }}
+                        {{ render_field(form.new_cliente_telefono, class="form-control") }}
+                        {{ render_field(form.new_cliente_direccion, class="form-control") }}
+                        {# ... otros campos de cliente/direccion si se añaden al form ... #}
+                    </div>
+                    #}
+
+
+                    {# Sección de Carrito de Compras #}
+                    <h2 class="card__subtitle mt-l">Productos del Pedido</h2>
+
+                    {# Área para añadir Productos de Pollo (requiere JS/AJAX) #}
+                    <div class="add-item-section mb-m"> {# Definir estilos en CSS #}
+                        <h3 class="card__subtitle">Añadir Producto de Pollo</h3>
+                        {# Formulario para añadir un item (puede ser un modal o sección) #}
+                        {# Este formulario se manejará con JS y AJAX #}
+                        <div id="add-item-form-area">
+                            {# Aquí se renderizaría un formulario como PedidoItemForm #}
+                            {# Ejemplo de campos (renderizados manualmente o con macro si se pasa el form) #}
+                            <div class="row g-s"> {# Usar grid con gap pequeño #}
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label" for="producto_search">Producto/Subproducto</label>
+                                        <input type="text" id="producto_search" class="form-control" placeholder="Buscar producto...">
+                                        <input type="hidden" id="producto_id" name="producto_id">
+                                        <input type="hidden" id="subproducto_id" name="subproducto_id">
+                                        <div id="producto_search_results" class="search-results-dropdown"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label class="form-label" for="modificacion_id">Modificación</label>
+                                        <select id="modificacion_id" name="modificacion_id" class="form-control">
+                                            <option value="">Seleccionar Modificación</option>
+                                            {# Opciones se cargarán con JS/AJAX #}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                     <div class="form-group">
+                                        <label class="form-label" for="cantidad">Cantidad</label>
+                                        <input type="number" id="cantidad" name="cantidad" class="form-control" step="0.001" value="1.000">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                     <div class="form-group">
+                                        <label class="form-label" for="unidad_medida">Unidad</label>
+                                        <select id="unidad_medida" name="unidad_medida" class="form-control">
+                                            <option value="kg">kg</option>
+                                            <option value="pieza">pieza</option>
+                                            <option value="paquete">paquete</option>
+                                            {# Añadir otras unidades si aplican #}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                     <div class="form-group">
+                                        <label class="form-label" for="notas_item">Notas del Ítem</label>
+                                        <input type="text" id="notas_item" name="notas_item" class="form-control" placeholder="Notas específicas para este ítem...">
+                                    </div>
+                                </div>
+                                <div class="col-md-12 text-right">
+                                    <button type="button" class="btn btn--secondary" id="add-item-btn">Añadir al Pedido</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Área para añadir Productos Adicionales (requiere JS/AJAX) #}
+                    <div class="add-pa-section mb-m"> {# Definir estilos en CSS #}
+                         <h3 class="card__subtitle">Añadir Producto Adicional (PA)</h3>
+                         {# Formulario para añadir un PA (puede ser un modal o sección) #}
+                         {# Este formulario se manejará con JS y AJAX #}
+                         <div id="add-pa-form-area">
+                             {# Aquí se renderizaría un formulario como ProductoAdicionalForm #}
+                             {# Ejemplo de campos #}
+                             <div class="row g-s">
+                                 <div class="col-md-6">
+                                     <div class="form-group">
+                                         <label class="form-label" for="nombre_pa">Nombre PA</label>
+                                         <input type="text" id="nombre_pa" name="nombre_pa" class="form-control" placeholder="Ej. Jitomate, Refresco...">
+                                     </div>
+                                 </div>
+                                 <div class="col-md-2">
+                                     <div class="form-group">
+                                         <label class="form-label" for="cantidad_pa">Cantidad</label>
+                                         <input type="number" id="cantidad_pa" name="cantidad_pa" class="form-control" step="0.001" value="1.000">
+                                     </div>
+                                 </div>
+                                 <div class="col-md-2">
+                                     <div class="form-group">
+                                         <label class="form-label" for="unidad_medida_pa">Unidad</label>
+                                         <select id="unidad_medida_pa" name="unidad_medida_pa" class="form-control">
+                                             <option value="kg">kg</option>
+                                             <option value="pieza">pieza</option>
+                                             <option value="litro">litro</option>
+                                             <option value="paquete">paquete</option>
+                                             <option value="MONTO">MONTO</option> {# Para PAs con precio fijo sin cantidad #}
+                                         </select>
+                                     </div>
+                                 </div>
+                                 <div class="col-md-2">
+                                     <div class="form-group">
+                                         <label class="form-label" for="precio_venta_unitario_pa">Precio Unitario</label>
+                                         <input type="number" id="precio_venta_unitario_pa" name="precio_venta_unitario_pa" class="form-control" step="0.01">
+                                         {# Opcional: Campo para costo_compra_unitario_pa si el Cajero lo registra #}
+                                         {# <input type="number" id="costo_compra_unitario_pa" name="costo_compra_unitario_pa" class="form-control" step="0.01" placeholder="Costo compra (opc)"> #}
+                                     </div>
+                                 </div>
+                                 <div class="col-md-12">
+                                     <div class="form-group">
+                                         <label class="form-label" for="notas_pa">Notas del PA</label>
+                                         <input type="text" id="notas_pa" name="notas_pa" class="form-control" placeholder="Notas específicas para este PA...">
+                                     </div>
+                                 </div>
+                                 <div class="col-md-12 text-right">
+                                     <button type="button" class="btn btn--secondary" id="add-pa-btn">Añadir PA al Pedido</button>
+                                 </div>
+                             </div>
+                         </div>
+                    </div>
+
+
+                    {# Lista de ítems y PAs en el carrito (se llenará con JS/AJAX) #}
+                    <div id="cart-items-list" class="mb-l"> {# Definir estilos en CSS #}
+                        <h3 class="card__subtitle">Resumen del Pedido</h3>
+                        {# Los ítems y PAs se listarán aquí dinámicamente con JS #}
+                        <p id="empty-cart-message">El pedido está vacío. Añade productos.</p>
+                        <ul id="items-list" class="list-group">
+                            {# Items de PedidoItem irán aquí #}
+                        </ul>
+                         <ul id="pas-list" class="list-group mt-s"> {# Usar clase de espaciado #}
+                            {# Productos Adicionales irán aquí #}
+                        </ul>
+                    </div>
+
+                    {# Sección de Resumen y Pago (se actualizará con JS/AJAX) #}
+                    <div id="order-summary" class="mb-l"> {# Definir estilos en CSS #}
+                        <h2 class="card__subtitle">Resumen y Pago</h2>
+                        <p>Subtotal Productos Pollo: <strong id="subtotal_pollo_display">{{ format_currency(0) }}</strong></p>
+                        <p>Subtotal Productos Adicionales: <strong id="subtotal_pas_display">{{ format_currency(0) }}</strong></p>
+                        {# Campos opcionales para descuento y costo de envío #}
+                        {{ render_field(form.descuento_aplicado, class="form-control") }}
+                        {{ render_field(form.costo_envio, class="form-control") }}
+                        <p class="total-pedido">Total Pedido: <strong id="total_pedido_display">{{ format_currency(0) }}</strong></p> {# Definir estilos para .total-pedido #}
+
+                        {# Sección de Pago #}
+                        <div class="payment-section mt-m"> {# Definir estilos en CSS #}
+                            {{ render_field(form.forma_pago, class="form-control") }}
+
+                            {# Campos para pago en efectivo (inicialmente ocultos, se muestran con JS) #}
+                            <div id="efectivo-fields" style="display: none;">
+                                {{ render_field(form.paga_con, class="form-control") }}
+                                <div id="cambio-info" class="mt-s"> {# Mostrar cambio y sugerencia de denominaciones #}
+                                    <p>Cambio a entregar: <strong id="cambio_entregado_display">{{ format_currency(0) }}</strong></p>
+                                    {# Opcional: Sugerencia de denominaciones (requiere JS avanzado y datos de caja) #}
+                                    {# <p>Sugerencia de cambio: <span id="denominaciones_sugeridas_display"></span></p> #}
+                                </div>
+                            </div>
+                            {# Otros campos de pago si se necesitan (ej. referencia de transferencia) #}
+                        </div>
+                    </div>
+
+                    {# Campos adicionales del pedido #}
+                    {{ render_field(form.repartidor_id, class="form-control") }} {# Selector de repartidor #}
+                    {{ render_field(form.fecha_entrega_programada, class="form-control") }}
+                    {{ render_field(form.notas_pedido, class="form-control") }}
+                    <div class="form-group form-check mb-m">
+                        {{ form.requiere_factura(class="form-check-input") }}
+                        {{ form.requiere_factura.label(class="form-check-label") }}
+                    </div>
+
+                    {# Botones de Acción #}
+                    <div class="form-group">
+                        {# El botón de submit principal del formulario #}
+                        <button type="submit" class="btn btn--primary btn-block">{{ form.submit.label.text }}</button>
+                        {# Botones adicionales que podrían estar aquí o en otro lugar, manejados por JS/AJAX #}
+                        {# <button type="button" class="btn btn--success btn-block mt-s" id="finalizar-venta-btn">Finalizar Venta</button> #}
+                        {# <button type="button" class="btn btn--info btn-block mt-s" id="enviar-cocina-btn">Enviar a Cocina</button> #}
+                    </div>
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('pedidos.listar_pedidos') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block body_scripts %}
+    {{ super() }} {# Mantener scripts de base.html #}
+    <script>
+        // Script específico para la página de crear/editar pedido
+        // Manejar búsqueda de cliente con AJAX
+        // Manejar adición/edición/eliminación de ítems/PAs con AJAX
+        // Actualizar resumen del carrito y totales dinámicamente
+        // Mostrar/ocultar campos de pago según la forma de pago seleccionada
+        // Calcular cambio dinámicamente si la forma de pago es efectivo
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const clienteSearchInput = document.getElementById('cliente_search');
+            const clienteSearchResults = document.getElementById('cliente_search_results');
+            const clienteIdInput = document.getElementById('cliente_id');
+            const clienteSelectedInfo = document.getElementById('cliente_selected_info');
+            const direccionEntregaSelect = document.getElementById('direccion_entrega_id');
+            const formaPagoSelect = document.getElementById('forma_pago');
+            const efectivoFields = document.getElementById('efectivo-fields');
+            const pagaConInput = document.getElementById('paga_con');
+            const cambioEntregadoDisplay = document.getElementById('cambio_entregado_display');
+            const totalPedidoDisplay = document.getElementById('total_pedido_display'); // Asumimos que este ID existe en el resumen
+
+            // --- Lógica de Búsqueda de Cliente (AJAX) ---
+            if (clienteSearchInput && clienteSearchResults && clienteIdInput) {
+                let searchTimeout;
+                clienteSearchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const query = this.value;
+                    if (query.length < 3) { // Mínimo 3 caracteres para buscar
+                        clienteSearchResults.style.display = 'none';
+                        return;
+                    }
+                    searchTimeout = setTimeout(function() {
+                        fetch(`/clientes/ajax/buscar?q=${encodeURIComponent(query)}`) // Asumimos esta ruta AJAX existe
+                            .then(response => response.json())
+                            .then(data => {
+                                clienteSearchResults.innerHTML = ''; // Limpiar resultados anteriores
+                                if (data.clientes && data.clientes.length > 0) {
+                                    data.clientes.forEach(cliente => {
+                                        const div = document.createElement('div');
+                                        div.classList.add('search-result-item'); // Definir estilo en CSS
+                                        div.textContent = `${cliente.nombre_completo} (${cliente.alias || 'Sin Alias'}) - ${cliente.telefono_principal || 'Sin Teléfono'}`;
+                                        div.dataset.clienteId = cliente.id;
+                                        div.dataset.clienteNombre = cliente.nombre_completo;
+                                        div.dataset.clienteAlias = cliente.alias;
+                                        div.dataset.clienteTipo = cliente.tipo_cliente;
+                                        div.addEventListener('click', function() {
+                                            const selectedId = this.dataset.clienteId;
+                                            const selectedNombre = this.dataset.clienteNombre;
+                                            const selectedAlias = this.dataset.clienteAlias;
+                                            const selectedTipo = this.dataset.clienteTipo;
+
+                                            clienteSearchInput.value = selectedNombre + (selectedAlias ? ` (${selectedAlias})` : '');
+                                            clienteIdInput.value = selectedId;
+                                            clienteSelectedInfo.innerHTML = `<strong>Cliente Seleccionado:</strong> ${selectedNombre} (${selectedTipo.replace('_', ' ').title()})`;
+                                            clienteSearchResults.style.display = 'none';
+
+                                            // Cargar direcciones del cliente seleccionado (si aplica)
+                                            if (direccionEntregaSelect) {
+                                                 loadClienteAddresses(selectedId); // Función para cargar direcciones
+                                            }
+
+                                            // Opcional: Actualizar precios en el carrito si ya hay ítems
+                                            // updateCartPricesForClient(selectedId);
+                                        });
+                                        clienteSearchResults.appendChild(div);
+                                    });
+                                    clienteSearchResults.style.display = 'block';
+                                } else {
+                                    clienteSearchResults.style.display = 'none';
+                                    // Opcional: Mostrar opción para crear nuevo cliente
+                                    // showNewClientFields();
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error buscando cliente:', error);
+                                clienteSearchResults.style.display = 'none';
+                            });
+                    }, 300); // Esperar 300ms después de la última tecla
+                });
+
+                // Ocultar resultados al hacer clic fuera
+                document.addEventListener('click', function(event) {
+                    if (!clienteSearchInput.contains(event.target) && !clienteSearchResults.contains(event.target)) {
+                        clienteSearchResults.style.display = 'none';
+                    }
+                });
+
+                // Función para cargar direcciones del cliente (AJAX)
+                function loadClienteAddresses(clienteId) {
+                    // Limpiar opciones actuales
+                    direccionEntregaSelect.innerHTML = '<option value="">Seleccionar Dirección</option>';
+                    if (!clienteId) return;
+
+                    fetch(`/clientes/ajax/${clienteId}/direcciones`) // Asumimos esta ruta AJAX existe
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.direcciones && data.direcciones.length > 0) {
+                                data.direcciones.forEach(direccion => {
+                                    const option = document.createElement('option');
+                                    option.value = direccion.id;
+                                    option.textContent = `${direccion.calle_numero}, ${direccion.colonia || ''}, ${direccion.ciudad} (${direccion.tipo_direccion.replace('_', ' ').title()})`;
+                                    if (direccion.es_principal) {
+                                        option.selected = true; // Seleccionar la principal por defecto
+                                    }
+                                    direccionEntregaSelect.appendChild(option);
+                                });
+                            } else {
+                                // Opcional: Mostrar mensaje o botón para añadir dirección
+                                const option = document.createElement('option');
+                                option.value = "";
+                                option.textContent = "No hay direcciones registradas";
+                                option.disabled = true;
+                                direccionEntregaSelect.appendChild(option);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error cargando direcciones:', error);
+                        });
+                }
+
+                // Si estamos editando un pedido y ya tiene cliente, cargar sus direcciones al cargar la página
+                const initialClienteId = clienteIdInput.value;
+                if (initialClienteId) {
+                     loadClienteAddresses(initialClienteId);
+                     // También cargar info del cliente si no está ya en la UI (ej. en editar)
+                     // fetch(`/clientes/ajax/${initialClienteId}/info`).then(...).then(...)
+                }
+            }
+
+            // --- Lógica para mostrar/ocultar campos de pago ---
+            if (formaPagoSelect && efectivoFields) {
+                formaPagoSelect.addEventListener('change', function() {
+                    if (this.value === 'EFECTIVO') {
+                        efectivoFields.style.display = 'block';
+                        // Opcional: Enfocar el campo "Paga con"
+                        // pagaConInput.focus();
+                    } else {
+                        efectivoFields.style.display = 'none';
+                        // Limpiar campos de efectivo si se ocultan
+                        if (pagaConInput) pagaConInput.value = '';
+                        if (cambioEntregadoDisplay) cambioEntregadoDisplay.textContent = '{{ format_currency(0) }}';
+                    }
+                });
+
+                // Disparar el evento change al cargar la página para el valor inicial
+                formaPagoSelect.dispatchEvent(new Event('change'));
+            }
+
+            // --- Lógica para calcular cambio (solo UI, no guarda en BD aquí) ---
+            if (pagaConInput && totalPedidoDisplay && cambioEntregadoDisplay) {
+                function calcularCambio() {
+                    const totalPedidoText = totalPedidoDisplay.textContent.replace('$', '').replace(/,/g, '');
+                    const totalPedido = parseFloat(totalPedidoText) || 0;
+                    const pagaCon = parseFloat(pagaConInput.value) || 0;
+                    const cambio = pagaCon - totalPedido;
+                    cambioEntregadoDisplay.textContent = formatCurrencyJS(cambio); // Usar helper JS
+                    // Opcional: Mostrar sugerencia de denominaciones (requiere JS avanzado)
+                }
+
+                // Asumimos que formatCurrencyJS es una función helper JS global o definida en main.js
+                // Si no, necesitamos una implementación simple aquí:
+                function formatCurrencyJS(value) {
+                    if (value === null || isNaN(value)) return "$0.00";
+                    return "$" + parseFloat(value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                }
+
+
+                pagaConInput.addEventListener('input', calcularCambio);
+
+                // Opcional: Observar cambios en el total del pedido si se actualiza dinámicamente
+                // const observer = new MutationObserver(calcularCambio);
+                // observer.observe(totalPedidoDisplay, { childList: true, subtree: true });
+
+                // Calcular cambio inicial si ya hay valores
+                calcularCambio();
+            }
+
+
+            // --- Lógica para añadir/editar/eliminar ítems y PAs (Requiere JS/AJAX) ---
+            // Esta parte es compleja y dependerá de cómo se implementen las interacciones.
+            // Podrías tener funciones como:
+            // function addItemToCart(itemData) { ... } // Envía datos al backend via AJAX POST
+            // function addPaToCart(paData) { ... } // Envía datos al backend via AJAX POST
+            // function updateCartDisplay(cartData) { ... } // Actualiza la lista de ítems y el resumen en la UI
+            // function removeItemFromCart(itemId) { ... } // Envía petición DELETE via AJAX
+            // function editItemInCart(itemId, newData) { ... } // Envía petición PUT via AJAX
+
+            // Los botones "Añadir al Pedido" y "Añadir PA al Pedido" necesitarían event listeners
+            // que recolecten los datos del formulario de adición y los envíen al backend via AJAX.
+            // El backend respondería con el estado actualizado del carrito/pedido, y el JS actualizaría la UI.
+
+            // Ejemplo básico de listener para añadir ítem (requiere implementar la función addItemToCart)
+            // const addItemBtn = document.getElementById('add-item-btn');
+            // if (addItemBtn) {
+            //     addItemBtn.addEventListener('click', function() {
+            //         const itemData = {
+            //             producto_id: document.getElementById('producto_id').value,
+            //             subproducto_id: document.getElementById('subproducto_id').value,
+            //             modificacion_id: document.getElementById('modificacion_id').value,
+            //             cantidad: document.getElementById('cantidad').value,
+            //             unidad_medida: document.getElementById('unidad_medida').value,
+            //             notas_item: document.getElementById('notas_item').value,
+            //             // precio_unitario_venta: document.getElementById('precio_unitario_venta').value // Si se permite editar precio unitario
+            //         };
+            //         // Validar datos antes de enviar
+            //         if (!itemData.producto_id && !itemData.subproducto_id) {
+            //             alert("Debe seleccionar un producto o subproducto.");
+            //             return;
+            //         }
+            //         // Asumimos que la ruta de añadir ítem es /pedidos/<pedido_id>/items/nuevo (POST)
+            //         // Si es un pedido nuevo, el ID aún no existe. La lógica de carrito temporal o guardar pedido vacío primero es necesaria.
+            //         // Para MVP, podríamos requerir guardar el pedido vacío primero para obtener un ID.
+            //         const currentPedidoId = {{ pedido.id if pedido else 'null' }}; // Si estamos en editar
+            //         if (currentPedidoId) {
+            //              addItemToCart(currentPedidoId, itemData); // Implementar esta función AJAX
+            //         } else {
+            //              alert("Primero debe guardar los datos principales del pedido.");
+            //              // O implementar lógica para carrito temporal en sesión o guardar pedido vacío
+            //         }
+            //     });
+            // }
+
+            // Similar para añadir PA (requiere implementar la función addPaToCart)
+            // const addPaBtn = document.getElementById('add-pa-btn');
+            // if (addPaBtn) {
+            //     addPaBtn.addEventListener('click', function() {
+            //         const paData = {
+            //             nombre_pa: document.getElementById('nombre_pa').value,
+            //             cantidad_pa: document.getElementById('cantidad_pa').value,
+            //             unidad_medida_pa: document.getElementById('unidad_medida_pa').value,
+            //             precio_venta_unitario_pa: document.getElementById('precio_venta_unitario_pa').value,
+            //             // costo_compra_unitario_pa: document.getElementById('costo_compra_unitario_pa').value,
+            //             notas_pa: document.getElementById('notas_pa').value,
+            //         };
+            //         // Validar datos
+            //         if (!paData.nombre_pa || !paData.cantidad_pa || !paData.precio_venta_unitario_pa) {
+            //              alert("Nombre, cantidad y precio del PA son requeridos.");
+            //              return;
+            //         }
+            //         const currentPedidoId = {{ pedido.id if pedido else 'null' }}; // Si estamos en editar
+            //         if (currentPedidoId) {
+            //              addPaToCart(currentPedidoId, paData); // Implementar esta función AJAX
+            //         } else {
+            //              alert("Primero debe guardar los datos principales del pedido.");
+            //         }
+            //     });
+            // }
+
+            // Funciones placeholder para AJAX (deben ser implementadas)
+            // async function addItemToCart(pedidoId, itemData) {
+            //     try {
+            //         const response = await fetch(`/pedidos/${pedidoId}/items/nuevo`, {
+            //             method: 'POST',
+            //             headers: {
+            //                 'Content-Type': 'application/json',
+            //                 // 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'), // Si usas CSRF token en meta
+            //             },
+            //             body: JSON.stringify(itemData)
+            //         });
+            //         const result = await response.json();
+            //         if (result.success) {
+            //             mostrarMensajeFlash(result.message, 'success');
+            //             updateCartDisplay(result.cart_data); // Implementar updateCartDisplay
+            //         } else {
+            //             mostrarMensajeFlash(result.message, 'danger');
+            //         }
+            //     } catch (error) {
+            //         console.error('Error añadiendo ítem:', error);
+            //         mostrarMensajeFlash('Error de comunicación con el servidor.', 'danger');
+            //     }
+            // }
+
+            // async function updateCartDisplay(cartData) {
+            //     // Esta función tomaría los datos del carrito (lista de items, pas, totales)
+            //     // y actualizaría los elementos HTML correspondientes (listas ul, spans de totales)
+            //     console.log("Actualizando UI del carrito con:", cartData);
+            //     const itemsList = document.getElementById('items-list');
+            //     const pasList = document.getElementById('pas-list');
+            //     const emptyMessage = document.getElementById('empty-cart-message');
+            //     const subtotalPolloDisplay = document.getElementById('subtotal_pollo_display');
+            //     const subtotalPasDisplay = document.getElementById('subtotal_pas_display');
+            //     const totalPedidoDisplay = document.getElementById('total_pedido_display');
+
+            //     // Limpiar listas actuales
+            //     itemsList.innerHTML = '';
+            //     pasList.innerHTML = '';
+
+            //     // Llenar listas con items y PAs de cartData
+            //     if (cartData.items && cartData.items.length > 0) {
+            //         cartData.items.forEach(item => {
+            //             const li = document.createElement('li');
+            //             li.classList.add('list-group-item'); // Usar clase de lista
+            //             li.textContent = `${item.cantidad} ${item.unidad_medida} ${item.descripcion_item_venta} - {{ format_currency(0) | replace('0.00', '') }}${item.subtotal_item.toFixed(2)}`; // Formatear subtotal
+            //             // Añadir botones de editar/eliminar (con data-item-id)
+            //             itemsList.appendChild(li);
+            //         });
+            //     }
+            //      if (cartData.pas && cartData.pas.length > 0) {
+            //         cartData.pas.forEach(pa => {
+            //             const li = document.createElement('li');
+            //             li.classList.add('list-group-item'); // Usar clase de lista
+            //             li.textContent = `${pa.cantidad_pa} ${pa.unidad_medida_pa} ${pa.nombre_pa} (PA) - {{ format_currency(0) | replace('0.00', '') }}${pa.subtotal_pa.toFixed(2)}`; // Formatear subtotal
+            //             // Añadir botones de editar/eliminar (con data-pa-id)
+            //             pasList.appendChild(li);
+            //         });
+            //     }
+
+            //     // Mostrar/ocultar mensaje de carrito vacío
+            //     if (cartData.items.length === 0 && cartData.pas.length === 0) {
+            //         emptyMessage.style.display = 'block';
+            //     } else {
+            //         emptyMessage.style.display = 'none';
+            //     }
+
+            //     // Actualizar totales
+            //     subtotalPolloDisplay.textContent = formatCurrencyJS(cartData.subtotal_productos_pollo);
+            //     subtotalPasDisplay.textContent = formatCurrencyJS(cartData.subtotal_productos_adicionales);
+            //     totalPedidoDisplay.textContent = formatCurrencyJS(cartData.total_pedido);
+
+            //     // Recalcular cambio si el campo paga_con tiene valor
+            //     if (pagaConInput && pagaConInput.value) {
+            //          calcularCambio();
+            //     }
+            // }
+
+            // Nota: La implementación completa de la gestión del carrito con AJAX
+            // es compleja y requeriría funciones adicionales en routes.py y services.py
+            // para manejar el carrito en sesión o guardar el pedido en BD de forma incremental.
+            // Para el MVP, la primera versión podría requerir guardar el pedido principal
+            // antes de añadir ítems, o usar un enfoque de carrito en sesión.
+            // Las plantillas están diseñadas para soportar la actualización dinámica.
+
+        });
+    </script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8"> {# Usar clases de grid #}
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+            </div>
+            <div class="card__body">
+                <p class="mb-m">Ingresa la cantidad de billetes y monedas que hay en la caja al iniciar tu turno.</p>
+                <form method="POST" action="{{ url_for('caja.apertura_caja') }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# Campos generados dinámicamente para cada denominación #}
+                    {% for field in form if field.type == 'IntegerField' and field.name.startswith('cantidad_') %}
+                        {{ render_field(field, class="form-control") }}
+                    {% endfor %}
+
+                    {{ render_field(form.notas_apertura, class="form-control") }}
+
+                    <button type="submit" class="btn btn--primary btn-block mt-m">{{ form.submit.label.text }}</button> {# Usar clase de espaciado #}
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('caja.dashboard_caja') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

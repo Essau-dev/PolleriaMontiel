@@ -1,0 +1,53 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <p class="card__subtitle">Código: {{ modificacion.codigo_modif }}</p>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('productos.editar_modificacion', modificacion_id=modificacion.id) }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                     {# El código de la modificación no debería ser editable una vez creado #}
+                     <div class="form-group">
+                        <label class="form-label">Código de la Modificación</label>
+                        <input type="text" class="form-control" value="{{ modificacion.codigo_modif }}" readonly>
+                         {{ form.codigo_modif(type="hidden") }} {# Mantener el código en un campo oculto #}
+                    </div>
+
+                    {{ render_field(form.nombre, class="form-control") }}
+                    {{ render_field(form.descripcion, class="form-control") }}
+                    {{ render_field(form.activo, class="form-check-input") }}
+
+                    {# Campos para asociar a Productos/Subproductos (puede requerir JS/AJAX) #}
+                    {# Para MVP, podría ser un SelectMultipleField o una lista de checkboxes #}
+                    <div class="form-group">
+                        <label class="form-label">Asociar a Productos Principales (Selecciona uno o varios)</label>
+                        {# Este campo se poblará en la ruta con productos activos y seleccionará los actuales #}
+                        {{ form.productos_asociados(class="form-control", size=5) }}
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">Asociar a Subproductos (Selecciona uno o varios)</label>
+                        {# Este campo se poblará en la ruta con subproductos activos y seleccionará los actuales #}
+                        {{ form.subproductos_asociados(class="form-control", size=5) }}
+                    </div>
+
+                    <div class="form-group mt-l">
+                        {{ form.submit(class="btn btn--primary btn-block") }}
+                    </div>
+                </form>
+            </div>
+             <div class="card__footer text-center">
+                 <a href="{{ url_for('productos.ver_modificacion', modificacion_id=modificacion.id) }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

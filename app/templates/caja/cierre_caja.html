@@ -1,0 +1,92 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8"> {# Usar clases de grid #}
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <p class="card__subtitle">Corte iniciado el {{ format_datetime(corte.fecha_apertura_periodo) }} por {{ corte.usuario_responsable_corte.nombre_completo }}.</p>
+            </div>
+            <div class="card__body">
+                <div class="mb-l"> {# Usar clase de espaciado #}
+                    <h2 class="card__subtitle">Resumen Teórico del Periodo</h2>
+                    <p><strong>Saldo Inicial Efectivo:</strong> {{ format_currency(corte.saldo_inicial_efectivo_teorico) }}</p>
+                    <p><strong>Total Ingresos Efectivo:</strong> {{ format_currency(corte.total_ingresos_efectivo_periodo) }}</p>
+                    <p><strong>Total Egresos Efectivo:</strong> {{ format_currency(corte.total_egresos_efectivo_periodo) }}</p>
+                    <p><strong>Saldo Final Teórico en Efectivo:</strong> <strong>{{ format_currency(saldo_teorico_actual) }}</strong></p>
+                    {# Mostrar otros totales teóricos si se calculan en la ruta #}
+                    {# <p>Total Ingresos Tarjeta: {{ format_currency(corte.total_ingresos_tarjeta_periodo) }}</p> #}
+                    {# <p>Total Ingresos Transferencia: {{ format_currency(corte.total_ingresos_transfer_periodo) }}</p> #}
+                </div>
+
+                <h2 class="card__subtitle">Conteo Físico de Efectivo al Cierre</h2>
+                <p class="mb-m">Cuenta el efectivo en caja e ingresa las cantidades por denominación.</p>
+
+                <form method="POST" action="{{ url_for('caja.cierre_caja', corte_id=corte.id) }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# Campos generados dinámicamente para cada denominación #}
+                    {% for field in form if field.type == 'IntegerField' and field.name.startswith('cantidad_') %}
+                        {{ render_field(field, class="form-control") }}
+                    {% endfor %}
+
+                    {# El total contado se calculará en el backend o con JS #}
+                    {# <div class="form-group">
+                        <label class="form-label">Total Efectivo Contado</label>
+                        <input type="text" class="form-control" id="total_contado_display" value="{{ format_currency(0) }}" readonly>
+                    </div> #}
+
+                    {{ render_field(form.notas_cierre, class="form-control") }}
+
+                    <button type="submit" class="btn btn--primary btn-block mt-m">{{ form.submit.label.text }}</button> {# Usar clase de espaciado #}
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('caja.dashboard_caja') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Opcional: Script JS para calcular el total contado en tiempo real #}
+{% block body_scripts %}
+    {{ super() }} {# Mantener scripts de base.html #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const totalContadoDisplay = document.getElementById('total_contado_display');
+            const denominacionInputs = form.querySelectorAll('input[type="number"][name^="cantidad_"]');
+
+            function calcularTotalContado() {
+                let total = 0;
+                denominacionInputs.forEach(input => {
+                    const cantidad = parseInt(input.value) || 0;
+                    // Extraer el valor de la denominación del nombre del campo (ej. cantidad_500_00 -> 500.00)
+                    const valorStr = input.name.replace('cantidad_', '').replace('_', '.');
+                    const valor = parseFloat(valorStr) || 0;
+                    total += cantidad * valor;
+                });
+                // Formatear como moneda (usando una función JS o pasando el helper de Flask)
+                // Para MVP simple, solo mostrar el número
+                if (totalContadoDisplay) {
+                     totalContadoDisplay.value = total.toFixed(2); // Mostrar con 2 decimales
+                     // Si tienes un helper JS para formato de moneda:
+                     // totalContadoDisplay.value = formatCurrencyJS(total);
+                }
+            }
+
+            // Calcular al cargar la página (si hay valores por defecto)
+            calcularTotalContado();
+
+            // Calcular cada vez que cambia un campo de cantidad
+            denominacionInputs.forEach(input => {
+                input.addEventListener('input', calcularTotalContado);
+            });
+        });
+    </script>
+{% endblock %}
+{% endblock %}

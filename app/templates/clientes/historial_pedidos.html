@@ -1,0 +1,61 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+        <p class="card__subtitle">Cliente: {{ client.get_nombre_completo() }}</p> {# Mostrar nombre del cliente #}
+    </div>
+    <div class="card__body">
+        {% if pedidos %}
+            <div class="table-responsive"> {# Wrapper para scroll en pantallas pequeñas #}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Fecha</th>
+                            <th>Tipo Venta</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.generar_folio_display() }}</td> {# Usar método del modelo #}
+                            <td>{{ format_datetime(pedido.fecha_creacion) }}</td> {# Usar helper #}
+                            <td>{{ pedido.tipo_venta.name.replace('_', ' ').title() }}</td> {# Mostrar nombre descriptivo del Enum #}
+                            <td>{{ format_currency(pedido.total_pedido) }}</td> {# Usar helper #}
+                            <td>
+                                {# Usar clases de estado de pedido definidas en CSS #}
+                                <span class="estado-pedido estado-pedido--{{ pedido.estado_pedido.value.lower() }}">
+                                    {{ pedido.estado_pedido.name.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {# Enlace para ver detalle del pedido (asumiendo ruta en modulo pedidos) #}
+                                <a href="{{ url_for('pedidos.ver_pedido', pedido_id=pedido.id) if 'pedidos.ver_pedido' in config['ROUTES'] else '#' }}" class="btn btn--info btn--sm">Ver Pedido</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {# Paginación si se implementa en la ruta #}
+            {#
+            {% if pagination.pages > 1 %}
+                ... paginación aquí ...
+            {% endif %}
+            #}
+        {% else %}
+            <p>Este cliente no tiene pedidos registrados.</p>
+        {% endif %}
+    </div>
+    <div class="card__footer text-center">
+        <a href="{{ url_for('clientes.ver_cliente', client_id=client.id) }}" class="btn btn--secondary">Volver al Cliente</a>
+    </div>
+</div>
+{% endblock %}

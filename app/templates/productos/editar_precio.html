@@ -1,0 +1,55 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <p class="card__subtitle">ID Precio: {{ precio.id }}</p>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('productos.editar_precio', precio_id=precio.id) }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# Los campos de target (producto/subproducto), tipo cliente y cantidad mínima no deberían ser editables una vez creados, ya que definen la unicidad del precio #}
+                    <div class="form-group">
+                        <label class="form-label">Aplica a</label>
+                         <input type="text" class="form-control" value="{% if precio.producto_base %}Producto: {{ precio.producto_base.nombre }} ({{ precio.producto_base.id }}){% elif precio.subproducto_base %}Subproducto: {{ precio.subproducto_base.nombre }} ({{ precio.subproducto_base.codigo_subprod }}){% else %}N/A{% endif %}" readonly>
+                         {{ form.producto_id(type="hidden") }} {# Mantener IDs en campos ocultos #}
+                         {{ form.subproducto_id(type="hidden") }}
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">Tipo Cliente</label>
+                        <input type="text" class="form-control" value="{{ precio.tipo_cliente.name.replace('_', ' ').title() }}" readonly>
+                         {{ form.tipo_cliente(type="hidden") }} {# Mantener tipo cliente en campo oculto #}
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">Cantidad Mínima (kg)</label>
+                        <input type="text" class="form-control" value="{{ precio.cantidad_minima_kg|string.rstrip('0').rstrip('.') }}" readonly>
+                         {{ form.cantidad_minima_kg(type="hidden") }} {# Mantener cantidad mínima en campo oculto #}
+                    </div>
+
+
+                    {# Estos campos sí son editables #}
+                    {{ render_field(form.precio_kg, class="form-control") }}
+                    {{ render_field(form.etiqueta_promo, class="form-control") }}
+                    {{ render_field(form.fecha_inicio_vigencia, class="form-control") }}
+                    {{ render_field(form.fecha_fin_vigencia, class="form-control") }}
+                    {{ render_field(form.activo, class="form-check-input") }}
+
+                    <div class="form-group mt-l">
+                        {{ form.submit(class="btn btn--primary btn-block") }}
+                    </div>
+                </form>
+            </div>
+             <div class="card__footer text-center">
+                 <a href="{{ url_for('productos.listar_precios') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

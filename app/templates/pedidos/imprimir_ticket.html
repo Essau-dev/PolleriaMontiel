@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Pedido #{{ format_pedido_folio(pedido.id) }}</title> {# Usar helper #}
+    <style>
+        /* Estilos básicos para impresión de ticket */
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Fuente tipo ticket */
+            font-size: 10px; /* Tamaño de fuente pequeño */
+            width: 58mm; /* Ancho típico de ticket de 58mm */
+            margin: 0 auto; /* Centrar en la página si se imprime en A4 */
+            padding: 5mm; /* Espacio alrededor del contenido */
+        }
+        .center {
+            text-align: center;
+        }
+        .right {
+            text-align: right;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .large {
+            font-size: 1.2em; /* Un poco más grande para totales */
+        }
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+        }
+        th, td {
+            padding: 1px 0;
+            text-align: left;
+        }
+        th {
+            border-bottom: 1px dashed #000;
+        }
+        .item-qty {
+            width: 15%;
+        }
+        .item-desc {
+            width: 65%;
+        }
+        .item-total {
+            width: 20%;
+            text-align: right;
+        }
+        .total-row td {
+            border-top: 1px dashed #000;
+            padding-top: 5px;
+        }
+        @media print {
+            body {
+                width: auto; /* Permitir que el ancho se ajuste a la impresora */
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <p class="bold large">{{ config.NOMBRE_NEGOCIO }}</p> {# Usar config #}
+        {% if config.direccion_negocio %}<p>{{ config.direccion_negocio }}</p>{% endif %}
+        {% if config.telefono_negocio %}<p>Tel: {{ config.telefono_negocio }}</p>{% endif %}
+        <div class="divider"></div>
+        <p class="bold">PEDIDO #{{ format_pedido_folio(pedido.id) }}</p> {# Usar helper #}
+        <p>{{ format_datetime(pedido.fecha_creacion) }}</p> {# Usar helper #}
+        <p>Atendido por: {{ pedido.usuario_creador.nombre_completo }}</p>
+        <div class="divider"></div>
+    </div>
+
+    {% if pedido.cliente %}
+    <p class="bold">Cliente: {{ pedido.cliente.get_nombre_completo() }}</p>
+        {% if pedido.cliente.alias %}<p>Alias: {{ pedido.cliente.alias }}</p>{% endif %}
+        {% if pedido.tipo_venta == TipoVenta.DOMICILIO and pedido.direccion_entrega %}
+            <p class="bold">Entrega:</p>
+            <p>{{ pedido.direccion_entrega.calle_numero }}</p>
+            {% if pedido.direccion_entrega.colonia %}<p>{{ pedido.direccion_entrega.colonia }}</p>{% endif %}
+            <p>{{ pedido.direccion_entrega.ciudad }}</p>
+            {% if pedido.direccion_entrega.referencias %}<p>Ref: {{ pedido.direccion_entrega.referencias }}</p>{% endif %}
+            {% if pedido.fecha_entrega_programada %}<p>Prog: {{ format_datetime(pedido.fecha_entrega_programada) }}</p>{% endif %}
+        {% endif %}
+    <div class="divider"></div>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th class="item-qty">Cant.</th>
+                <th class="item-desc">Descripción</th>
+                <th class="item-total">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in pedido.items %}
+            <tr>
+                <td>{{ item.cantidad|string.rstrip('0').rstrip('.') }} {{ item.unidad_medida }}</td> {# Formatear cantidad #}
+                <td>{{ item.descripcion_item_venta }}</td>
+                <td class="right">{{ format_currency(item.subtotal_item) }}</td> {# Usar helper #}
+            </tr>
+                {% if item.notas_item %}
+                <tr>
+                    <td></td>
+                    <td colspan="2"><em>Notas: {{ item.notas_item }}</em></td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+             {% for pa in pedido.productos_adicionales_pedido %}
+            <tr>
+                <td>{{ pa.cantidad_pa|string.rstrip('0').rstrip('.') }} {{ pa.unidad_medida_pa }}</td> {# Formatear cantidad #}
+                <td>{{ pa.nombre_pa }} (PA)</td>
+                <td class="right">{{ format_currency(pa.subtotal_pa) }}</td> {# Usar helper #}
+            </tr>
+                {% if pa.notas_pa %}
+                <tr>
+                    <td></td>
+                    <td colspan="2"><em>Notas: {{ pa.notas_pa }}</em></td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="divider"></div>
+
+    <table>
+        <tbody>
+            <tr>
+                <td>Subtotal Pollo:</td>
+                <td class="right">{{ format_currency(pedido.subtotal_productos_pollo) }}</td> {# Usar helper #}
+            </tr>
+            <tr>
+                <td>Subtotal PAs:</td>
+                <td class="right">{{ format_currency(pedido.subtotal_productos_adicionales) }}</td> {# Usar helper #}
+            </tr>
+            {% if pedido.descuento_aplicado > 0 %}
+            <tr>
+                <td>Descuento:</td>
+                <td class="right">-{{ format_currency(pedido.descuento_aplicado) }}</td> {# Usar helper #}
+            </tr>
+            {% endif %}
+             {% if pedido.costo_envio > 0 %}
+            <tr>
+                <td>Envío:</td>
+                <td class="right">{{ format_currency(pedido.costo_envio) }}</td> {# Usar helper #}
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td class="bold large">TOTAL:</td>
+                <td class="right bold large">{{ format_currency(pedido.total_pedido) }}</td> {# Usar helper #}
+            </tr>
+        </tbody>
+    </table>
+    <div class="divider"></div>
+
+    {% if pedido.forma_pago %}
+    <p class="bold">Forma de Pago: {{ pedido.forma_pago.name.replace('_', ' ').title() }}</p>
+        {% if pedido.forma_pago == FormaPago.EFECTIVO and pedido.paga_con is not none %}
+        <p>Paga Con: {{ format_currency(pedido.paga_con) }}</p> {# Usar helper #}
+        <p>Cambio: {{ format_currency(pedido.cambio_entregado) if pedido.cambio_entregado is not none else format_currency(pedido.paga_con - pedido.total_pedido) }}</p> {# Usar helper #}
+        {% endif %}
+    <div class="divider"></div>
+    {% endif %}
+
+    {% if pedido.notas_pedido %}
+    <p class="bold">Notas del Pedido:</p>
+    <p>{{ pedido.notas_pedido }}</p>
+    <div class="divider"></div>
+    {% endif %}
+
+    <div class="center">
+        <p>¡Gracias por tu preferencia!</p>
+        <p>SGPM v0.1 (MVP)</p>
+    </div>
+
+</body>
+</html>

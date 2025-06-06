@@ -1,0 +1,32 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6"> {# Usar clases de grid #}
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('caja.registrar_movimiento') }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {{ render_field(form.tipo_movimiento, class="form-control") }}
+                    {{ render_field(form.motivo_movimiento, class="form-control") }}
+                    {{ render_field(form.monto_movimiento, class="form-control") }}
+                    {{ render_field(form.forma_pago_efectuado, class="form-control") }}
+                    {{ render_field(form.notas_movimiento, class="form-control") }}
+
+                    <button type="submit" class="btn btn--primary btn-block mt-m">{{ form.submit.label.text }}</button> {# Usar clase de espaciado #}
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('caja.dashboard_caja') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

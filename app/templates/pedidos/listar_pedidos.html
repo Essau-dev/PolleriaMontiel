@@ -1,0 +1,109 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+    </div>
+    <div class="card__body">
+        <div class="d-flex justify-content-between align-items-center mb-m">
+            <a href="{{ url_for('pedidos.crear_pedido') }}" class="btn btn--primary">Registrar Nuevo Pedido</a>
+            {# Formulario de búsqueda (Opcional para MVP, si se implementa search_pedidos en la ruta) #}
+            {#
+            <form method="GET" action="{{ url_for('pedidos.listar_pedidos') }}" class="d-flex">
+                <input type="text" name="q" class="form-control mr-s" placeholder="Buscar pedido..." value="{{ search_query or '' }}">
+                <button type="submit" class="btn btn--secondary">Buscar</button>
+            </form>
+            #}
+        </div>
+
+        {% if pedidos %}
+            <div class="table-responsive"> {# Wrapper para scroll en pantallas pequeñas #}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Cliente</th>
+                            <th>Tipo Venta</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Fecha/Hora</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ format_pedido_folio(pedido.id) }}</td> {# Usar helper #}
+                            <td>{{ pedido.cliente.get_nombre_completo() if pedido.cliente else 'Mostrador' }}</td>
+                            <td>{{ pedido.tipo_venta.name.replace('_', ' ').title() }}</td> {# Mostrar nombre descriptivo del Enum #}
+                            <td>{{ format_currency(pedido.total_pedido) }}</td> {# Usar helper #}
+                            <td>
+                                {# Usar clases de estado de pedido definidas en CSS #}
+                                <span class="estado-pedido estado-pedido--{{ pedido.estado_pedido.value.lower() }}">
+                                    {{ pedido.estado_pedido.name.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>{{ format_datetime(pedido.fecha_creacion) }}</td> {# Usar helper #}
+                            <td>
+                                <a href="{{ url_for('pedidos.ver_pedido', pedido_id=pedido.id) }}" class="btn btn--info btn--sm">Ver</a>
+                                {% if pedido.puede_ser_modificado() %} {# Usar método del modelo #}
+                                <a href="{{ url_for('pedidos.editar_pedido', pedido_id=pedido.id) }}" class="btn btn--secondary btn--sm">Editar</a>
+                                {% endif %}
+                                {# Botones de cambio de estado rápido (Opcional, puede ser un dropdown o modal) #}
+                                {#
+                                <button class="btn btn--warning btn--sm">Cambiar Estado</button>
+                                #}
+                                {# Botones de impresión #}
+                                <a href="{{ url_for('pedidos.imprimir_ticket', pedido_id=pedido.id) }}" class="btn btn--light btn--sm" target="_blank">Ticket</a>
+                                <a href="{{ url_for('pedidos.imprimir_comanda', pedido_id=pedido.id) }}" class="btn btn--light btn--sm" target="_blank">Comanda</a>
+                                {# Botón de eliminar (solo Admin y si el estado lo permite) #}
+                                {% if current_user.is_admin() and pedido.estado_pedido in [EstadoPedido.PENDIENTE_CONFIRMACION, EstadoPedido.PENDIENTE_PREPARACION, EstadoPedido.CANCELADO_POR_CLIENTE, EstadoPedido.CANCELADO_POR_NEGOCIO] %}
+                                <form action="{{ url_for('pedidos.eliminar_pedido', pedido_id=pedido.id) }}" method="POST" class="d-inline-block">
+                                    <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('¿Estás seguro de eliminar este pedido? Esta acción no se puede deshacer.');">Eliminar</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Paginación #}
+            {% if pagination.pages > 1 %}
+                <nav aria-label="Navegación de pedidos">
+                    <ul class="pagination justify-content-center"> {# Definir estilos para .pagination en CSS #}
+                        {% if pagination.has_prev %}
+                            <li><a href="{{ url_for('pedidos.listar_pedidos', page=pagination.prev_num) }}">Anterior</a></li>
+                        {% else %}
+                            <li class="disabled"><span>Anterior</span></li>
+                        {% endif %}
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                {% if page != pagination.page %}
+                                    <li><a href="{{ url_for('pedidos.listar_pedidos', page=page) }}">{{ page }}</a></li>
+                                {% else %}
+                                    <li class="active"><span>{{ page }}</span></li> {# Definir clase de estilo para página activa #}
+                                {% endif %}
+                            {% else %}
+                                <li class="ellipsis"><span>...</span></li> {# Definir clase de estilo para elipsis #}
+                            {% endif %}
+                        {% endfor %}
+                        {% if pagination.has_next %}
+                            <li><a href="{{ url_for('pedidos.listar_pedidos', page=pagination.next_num) }}">Siguiente</a></li>
+                        {% else %}
+                            <li class="disabled"><span>Siguiente</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <p>No se encontraron pedidos activos.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

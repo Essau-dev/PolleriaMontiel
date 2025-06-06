@@ -1,0 +1,41 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <p class="card__subtitle">Código: {{ subproducto.codigo_subprod }}</p>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('productos.editar_subproducto', subproducto_id=subproducto.id) }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# El código del subproducto no debería ser editable una vez creado #}
+                     <div class="form-group">
+                        <label class="form-label">Código del Subproducto</label>
+                        <input type="text" class="form-control" value="{{ subproducto.codigo_subprod }}" readonly>
+                         {{ form.codigo_subprod(type="hidden") }} {# Mantener el código en un campo oculto #}
+                    </div>
+
+                    {{ render_field(form.producto_padre_id, class="form-control") }} {# SelectField poblado en la ruta #}
+                    {{ render_field(form.nombre, class="form-control") }}
+                    {{ render_field(form.descripcion, class="form-control") }}
+                    {{ render_field(form.activo, class="form-check-input") }}
+
+                    <div class="form-group mt-l">
+                        {{ form.submit(class="btn btn--primary btn-block") }}
+                    </div>
+                </form>
+            </div>
+             <div class="card__footer text-center">
+                 <a href="{{ url_for('productos.ver_subproducto', subproducto_id=subproducto.id) }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

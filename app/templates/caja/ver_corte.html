@@ -1,0 +1,152 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+        <p class="card__subtitle">Usuario Responsable: {{ corte.usuario_responsable_corte.nombre_completo }}</p>
+    </div>
+    <div class="card__body">
+        <div class="row"> {# Usar clases de grid #}
+            <div class="col-md-6">
+                <h2 class="card__subtitle">Información del Corte</h2>
+                <p><strong>ID Corte:</strong> {{ corte.id }}</p>
+                <p><strong>Fecha Apertura:</strong> {{ format_datetime(corte.fecha_apertura_periodo) }}</p>
+                <p><strong>Fecha Cierre:</strong> {{ format_datetime(corte.fecha_cierre_corte) }}</p>
+                <p><strong>Estado:</strong>
+                    {% if corte.estado_corte.value == 'ABIERTO' %}
+                        <span class="estado-info">{{ corte.estado_corte.name.replace('_', ' ').title() }}</span>
+                    {% elif corte.estado_corte.value == 'CERRADO_CONCILIADO' %}
+                        <span class="estado-activo">{{ corte.estado_corte.name.replace('_', ' ').title() }}</span>
+                    {% elif corte.estado_corte.value == 'CERRADO_CON_DIFERENCIA' %}
+                        <span class="estado-warning">{{ corte.estado_corte.name.replace('_', ' ').title() }}</span>
+                    {% else %}
+                         {{ corte.estado_corte.name.replace('_', ' ').title() }}
+                    {% endif %}
+                </p>
+                <p><strong>Notas del Corte:</strong> {{ corte.notas_corte or '-' }}</p>
+            </div>
+            <div class="col-md-6">
+                <h2 class="card__subtitle">Saldos y Totales</h2>
+                <p><strong>Saldo Inicial Efectivo Teórico:</strong> {{ format_currency(corte.saldo_inicial_efectivo_teorico) }}</p>
+                <p><strong>Total Ingresos Efectivo Periodo:</strong> {{ format_currency(corte.total_ingresos_efectivo_periodo) }}</p>
+                <p><strong>Total Egresos Efectivo Periodo:</strong> {{ format_currency(corte.total_egresos_efectivo_periodo) }}</p>
+                <p><strong>Saldo Final Efectivo Teórico:</strong> {{ format_currency(corte.saldo_final_efectivo_teorico) }}</p>
+                <p><strong>Saldo Final Efectivo Contado:</strong> {{ format_currency(corte.saldo_final_efectivo_contado) }}</p>
+                 <p><strong>Diferencia Efectivo:</strong>
+                    {% if corte.diferencia_efectivo == 0 %}
+                        <span class="estado-activo">{{ format_currency(corte.diferencia_efectivo) }}</span>
+                    {% elif corte.diferencia_efectivo > 0 %}
+                        <span class="estado-info">{{ format_currency(corte.diferencia_efectivo) }} (Sobrante)</span>
+                    {% else %}
+                        <span class="estado-inactivo">{{ format_currency(corte.diferencia_efectivo) }} (Faltante)</span>
+                    {% endif %}
+                </p>
+                {# Mostrar otros totales de ingresos si se calculan #}
+                {% if corte.total_ingresos_tarjeta_periodo > 0 %}
+                <p><strong>Total Ingresos Tarjeta Periodo:</strong> {{ format_currency(corte.total_ingresos_tarjeta_periodo) }}</p>
+                {% endif %}
+                 {% if corte.total_ingresos_transfer_periodo > 0 %}
+                <p><strong>Total Ingresos Transferencia Periodo:</strong> {{ format_currency(corte.total_ingresos_transfer_periodo) }}</p>
+                {% endif %}
+                 {% if corte.total_ingresos_otros_periodo > 0 %}
+                <p><strong>Total Ingresos Otros Periodo:</strong> {{ format_currency(corte.total_ingresos_otros_periodo) }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-l"> {# Usar clase de espaciado #}
+            <h2 class="card__subtitle">Conteo Físico Detallado al Cierre</h2>
+            {% if conteo_final_denominaciones %}
+                <ul class="list-group"> {# Usar clases de lista #}
+                    {% for valor, cantidad in conteo_final_denominaciones.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> {# Usar clases de lista y flex #}
+                            ${{ valor|string.rstrip('0').rstrip('.') }}: {{ cantidad }} x ${{ valor|string.rstrip('0').rstrip('.') }} = {{ format_currency(valor * cantidad) }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se registró el conteo detallado de denominaciones para este corte.</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-l"> {# Usar clase de espaciado #}
+            <h2 class="card__subtitle">Totales por Forma de Pago (Ingresos del Periodo)</h2>
+             {% if totales_por_forma_pago %}
+                <ul class="list-group"> {# Usar clases de lista #}
+                    {% for forma_pago, total in totales_por_forma_pago.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> {# Usar clases de lista y flex #}
+                            {{ forma_pago }}: <strong>{{ format_currency(total) }}</strong>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No se registraron ingresos en este periodo de corte.</p>
+            {% endif %}
+        </div>
+
+
+        <div class="mt-l"> {# Usar clase de espaciado #}
+            <h2 class="card__subtitle">Movimientos Incluidos en este Corte</h2>
+            {% if movimientos_del_corte %}
+                 <div class="table-responsive"> {# Wrapper para scroll en pantallas pequeñas #}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha/Hora</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Forma Pago</th>
+                                <th>Motivo</th>
+                                <th>Pedido Asoc.</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movimiento in movimientos_del_corte %}
+                            <tr>
+                                <td>{{ movimiento.id }}</td>
+                                <td>{{ format_datetime(movimiento.fecha_movimiento) }}</td>
+                                <td>
+                                    {% if movimiento.tipo_movimiento.value == 'INGRESO' %}
+                                        <span class="estado-activo">{{ movimiento.tipo_movimiento.name.replace('_', ' ').title() }}</span>
+                                    {% elif movimiento.tipo_movimiento.value == 'EGRESO' %}
+                                        <span class="estado-inactivo">{{ movimiento.tipo_movimiento.name.replace('_', ' ').title() }}</span>
+                                    {% else %}
+                                        {{ movimiento.tipo_movimiento.name.replace('_', ' ').title() }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ format_currency(movimiento.monto_movimiento) }}</td>
+                                <td>{{ movimiento.forma_pago_efectuado.name.replace('_', ' ').title() }}</td>
+                                <td>{{ movimiento.motivo_movimiento }}</td>
+                                <td>
+                                    {% if movimiento.pedido_id %}
+                                        <a href="{{ url_for('pedidos.ver_pedido', pedido_id=movimiento.pedido_id) if 'pedidos.ver_pedido' in config['ROUTES'] else '#' }}">{{ movimiento.pedido_id }}</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ movimiento.notas_movimiento or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay movimientos asociados a este corte.</p>
+            {% endif %}
+        </div>
+
+    </div>
+    <div class="card__footer text-center">
+        {% if current_user.is_admin() %}
+             <a href="{{ url_for('caja.listar_cortes') }}" class="btn btn--secondary">Volver al Historial de Cortes</a>
+        {% else %}
+             <a href="{{ url_for('caja.dashboard_caja') }}" class="btn btn--secondary">Volver al Dashboard de Caja</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

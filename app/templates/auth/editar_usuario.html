@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %}
+
+{% block title %}Editar Usuario - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h2 class="card__title mb-0">Editar Usuario: {{ user.username }}</h2>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('auth.editar_usuario', user_id=user.id) }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# Mostrar el ID del usuario, no editable #}
+                    <div class="form-group">
+                        <label class="form-label">ID de Usuario</label>
+                        <input type="text" class="form-control" value="{{ user.id }}" readonly>
+                    </div>
+
+                    {# Mostrar el nombre de usuario, no editable en este formulario #}
+                     <div class="form-group">
+                        <label class="form-label">Nombre de Usuario</label>
+                        <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                    </div>
+
+                    {# Campos editables #}
+                    {{ render_field(form.nombre_completo, placeholder="Nombre y apellidos del empleado") }}
+                    {{ render_field(form.rol) }}
+
+                    <div class="form-group form-check mb-m">
+                        {{ form.activo(class="form-check-input") }}
+                        {{ form.activo.label(class="form-check-label") }}
+                    </div>
+
+                    <button type="submit" class="btn btn--primary btn-block">Guardar Cambios</button>
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('auth.reset_password_usuario', user_id=user.id) }}" class="btn btn--warning btn--sm">Resetear Contraseña</a>
+                 <a href="{{ url_for('auth.listar_usuarios') }}" class="btn btn--secondary btn--sm ml-m">Cancelar</a> {# Añadir clase para margen #}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

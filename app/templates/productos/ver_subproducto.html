@@ -1,0 +1,74 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <p class="card__subtitle">Código: {{ subproducto.codigo_subprod }}</p>
+            </div>
+            <div class="card__body">
+                <p><strong>Nombre:</strong> {{ subproducto.nombre }}</p>
+                <p><strong>Producto Padre:</strong>
+                    {% if subproducto.producto_padre %}
+                        <a href="{{ url_for('productos.ver_producto', producto_id=subproducto.producto_padre.id) }}">{{ subproducto.producto_padre.nombre }} ({{ subproducto.producto_padre.id }})</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                 <p><strong>Estado:</strong>
+                     <span class="status-indicator status-indicator--{{ 'success' if subproducto.activo else 'danger' }}">
+                        {{ 'Activo' if subproducto.activo else 'Inactivo' }}
+                    </span>
+                </p>
+                {% if subproducto.descripcion %}
+                <p><strong>Descripción:</strong> {{ subproducto.descripcion }}</p>
+                {% endif %}
+
+                 <h3 class="card__subtitle mt-l">Modificaciones Aplicables</h3>
+                {% if subproducto.modificaciones_aplicables.count() > 0 %}
+                <ul class="list-group">
+                    {% for modificacion in subproducto.modificaciones_aplicables %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('productos.ver_modificacion', modificacion_id=modificacion.id) }}">{{ modificacion.nombre }} ({{ modificacion.codigo_modif }})</a>
+                         <span class="status-indicator status-indicator--{{ 'success' if modificacion.activo else 'danger' }} status-indicator--sm">
+                            {{ 'Activa' if modificacion.activo else 'Inactiva' }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No hay modificaciones aplicables a este subproducto.</p>
+                {% endif %}
+
+                <h3 class="card__subtitle mt-l">Precios Asociados</h3>
+                 {% if subproducto.precios.count() > 0 %}
+                <ul class="list-group">
+                    {% for precio in subproducto.precios %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Precio para {{ precio.tipo_cliente.name.replace('_', ' ').title() }} desde {{ precio.cantidad_minima_kg|string.rstrip('0').rstrip('.') }} kg: <strong>{{ format_currency(precio.precio_kg) }}/kg</strong>
+                         {% if precio.etiqueta_promo %}<span class="badge badge--info ml-s">{{ precio.etiqueta_promo }}</span>{% endif %}
+                         <span class="status-indicator status-indicator--{{ 'success' if precio.activo else 'danger' }} status-indicator--sm ml-auto">
+                            {{ 'Activo' if precio.activo else 'Inactivo' }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No hay precios definidos para este subproducto.</p>
+                {% endif %}
+
+            </div>
+            <div class="card__footer text-center">
+                 {% if current_user.is_admin() %}
+                 <a href="{{ url_for('productos.editar_subproducto', subproducto_id=subproducto.id) }}" class="btn btn--secondary mr-s">Editar Subproducto</a>
+                 {% endif %}
+                 <a href="{{ url_for('productos.listar_subproductos') }}" class="btn btn--secondary">Volver a Subproductos</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

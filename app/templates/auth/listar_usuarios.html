@@ -1,0 +1,108 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Lista de Usuarios - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">Gestión de Usuarios</h1>
+    </div>
+    <div class="card__body">
+        <div class="mb-m">
+            <a href="{{ url_for('auth.registro_usuario') }}" class="btn btn--primary">Registrar Nuevo Usuario</a>
+        </div>
+
+        {% if usuarios %}
+            <div class="table-responsive"> {# Wrapper para scroll en pantallas pequeñas #}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre de Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Rol</th>
+                            <th>Activo</th>
+                            <th>Fecha Creación</th>
+                            <th>Último Login</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in usuarios %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.nombre_completo }}</td>
+                            <td>{{ user.rol.value.replace('_', ' ').title() }}</td> {# Mostrar el valor del Enum formateado #}
+                            <td>
+                                {% if user.activo %}
+                                    <span class="estado-activo">Sí</span> {# Definir clase de estilo para activo #}
+                                {% else %}
+                                    <span class="estado-inactivo">No</span> {# Definir clase de estilo para inactivo #}
+                                {% endif %}
+                            </td>
+                            <td>{{ user.fecha_creacion.strftime('%Y-%m-%d %H:%M') }}</td> {# Formato de fecha simple #}
+                            <td>{{ user.ultimo_login.strftime('%Y-%m-%d %H:%M') if user.ultimo_login else 'Nunca' }}</td> {# Formato de fecha simple #}
+                            <td>
+                                <a href="{{ url_for('auth.editar_usuario', user_id=user.id) }}" class="btn btn--sm btn--secondary">Editar</a>
+                                <a href="{{ url_for('auth.reset_password_usuario', user_id=user.id) }}" class="btn btn--sm btn--warning">Resetear Contraseña</a>
+
+                                {% if user.id != current_user.id %} {# Prevenir desactivar/eliminar al usuario actual #}
+                                    {% if user.activo %}
+                                        <form action="{{ url_for('auth.desactivar_usuario', user_id=user.id) }}" method="POST" class="d-inline-block">
+                                            {{ form.hidden_tag() }} {# CSRF token #}
+                                            <button type="submit" class="btn btn--sm btn--danger" onclick="return confirm('¿Estás seguro de desactivar al usuario {{ user.username }}?');">Desactivar</button>
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for('auth.activar_usuario', user_id=user.id) }}" method="POST" class="d-inline-block">
+                                            {{ form.hidden_tag() }} {# CSRF token #}
+                                            <button type="submit" class="btn btn--sm btn--success" onclick="return confirm('¿Estás seguro de activar al usuario {{ user.username }}?');">Activar</button>
+                                        </form>
+                                    {% endif %}
+                                    <form action="{{ url_for('auth.eliminar_usuario', user_id=user.id) }}" method="POST" class="d-inline-block">
+                                        {{ form.hidden_tag() }} {# CSRF token #}
+                                        <button type="submit" class="btn btn--sm btn--danger" onclick="return confirm('¿Estás seguro de eliminar al usuario {{ user.username }}? Esta acción es irreversible.');">Eliminar</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">Acciones restringidas (usuario actual)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Paginación #}
+            <nav aria-label="Navegación de Usuarios">
+                <ul class="pagination"> {# Definir estilos para .pagination en CSS #}
+                    {% if pagination.has_prev %}
+                        <li><a href="{{ url_for('auth.listar_usuarios', page=pagination.prev_num) }}">Anterior</a></li>
+                    {% else %}
+                        <li class="disabled"><span>Anterior</span></li>
+                    {% endif %}
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            {% if page != pagination.page %}
+                                <li><a href="{{ url_for('auth.listar_usuarios', page=page) }}">{{ page }}</a></li>
+                            {% else %}
+                                <li class="active"><span>{{ page }}</span></li> {# Definir clase de estilo para página activa #}
+                            {% endif %}
+                        {% else %}
+                            <li class="ellipsis"><span>...</span></li> {# Definir clase de estilo para elipsis #}
+                        {% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                        <li><a href="{{ url_for('auth.listar_usuarios', page=pagination.next_num) }}">Siguiente</a></li>
+                    {% else %}
+                        <li class="disabled"><span>Siguiente</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+        {% else %}
+            <p>No hay usuarios registrados en el sistema.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

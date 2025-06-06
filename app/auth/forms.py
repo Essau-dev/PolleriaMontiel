@@ -1,8 +1,7 @@
-
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
-from app.models import Usuario
+from app.models import Usuario, RolUsuario # Importar RolUsuario
 
 class LoginForm(FlaskForm):
     username = StringField('Nombre de Usuario', validators=[DataRequired(), Length(min=3, max=80)])
@@ -16,13 +15,8 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Contraseña', validators=[DataRequired(), Length(min=8)])
     password2 = PasswordField(
         'Confirmar Contraseña', validators=[DataRequired(), EqualTo('password', message='Las contraseñas deben coincidir.')])
-    rol_choices = [
-        ('ADMINISTRADOR', 'Administrador'),
-        ('CAJERO', 'Cajero'),
-        ('TABLAJERO', 'Tablajero'),
-        ('REPARTIDOR', 'Repartidor')
-    ]
-    rol = SelectField('Rol del Usuario', choices=rol_choices, validators=[DataRequired()])
+    # Usar el Enum RolUsuario para las opciones del SelectField
+    rol = SelectField('Rol del Usuario', choices=[(role.value, role.name.replace('_', ' ').title()) for role in RolUsuario], validators=[DataRequired()])
     activo = BooleanField('Usuario Activo', default=True)
     submit = SubmitField('Registrar Usuario')
 

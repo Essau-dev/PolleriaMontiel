@@ -1,0 +1,47 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro para renderizar campos #}
+
+{% block title %>{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8"> {# Usar clases de grid para centrar y limitar ancho en desktop #}
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                 <p class="card__subtitle">Cliente: {{ client.get_nombre_completo() }}</p> {# Mostrar nombre del cliente #}
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('clientes.editar_direccion', address_id=address.id) }}">
+                    {{ form.hidden_tag() }} {# Campo oculto para CSRF token #}
+
+                    {# Mostrar ID de la dirección (no editable) #}
+                    <div class="form-group">
+                        <label class="form-label">ID Dirección</label>
+                        <input type="text" class="form-control" value="{{ address.id }}" readonly>
+                    </div>
+
+                    {{ render_field(form.calle_numero, class="form-control") }}
+                    {{ render_field(form.colonia, class="form-control") }}
+                    {{ render_field(form.ciudad, class="form-control") }}
+                    {{ render_field(form.codigo_postal, class="form-control") }}
+                    {{ render_field(form.referencias, class="form-control") }}
+                    {{ render_field(form.tipo_direccion, class="form-control") }}
+                    {{ render_field(form.latitud, class="form-control") }}
+                    {{ render_field(form.longitud, class="form-control") }}
+
+                    <div class="form-group form-check mb-m"> {# Usar clases de espaciado #}
+                        {{ form.es_principal(class="form-check-input") }}
+                        {{ form.es_principal.label(class="form-check-label") }}
+                    </div>
+
+                    <button type="submit" class="btn btn--primary btn-block">{{ form.submit.label.text }}</button>
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('clientes.ver_cliente', client_id=client.id) }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+        <p class="card__subtitle">Creado por: {{ pedido.usuario_creador.nombre_completo }} el {{ format_datetime(pedido.fecha_creacion) }}</p>
+    </div>
+    <div class="card__body">
+        <div class="row"> {# Usar grid para layout #}
+            <div class="col-md-6">
+                <h2 class="card__subtitle">Información del Pedido</h2>
+                <p><strong>Folio:</strong> {{ format_pedido_folio(pedido.id) }}</p> {# Usar helper #}
+                <p><strong>Cliente:</strong> {{ pedido.cliente.get_nombre_completo() if pedido.cliente else 'Mostrador' }}</p>
+                <p><strong>Tipo de Venta:</strong> {{ pedido.tipo_venta.name.replace('_', ' ').title() }}</p>
+                <p><strong>Estado:</strong>
+                    <span class="estado-pedido estado-pedido--{{ pedido.estado_pedido.value.lower() }}">
+                        {{ pedido.estado_pedido.name.replace('_', ' ').title() }}
+                    </span>
+                </p>
+                <p><strong>Forma de Pago:</strong> {{ pedido.forma_pago.name.replace('_', ' ').title() if pedido.forma_pago else '-' }}</p>
+                {% if pedido.tipo_venta == TipoVenta.DOMICILIO %} {# Mostrar solo para domicilio #}
+                <p><strong>Repartidor Asignado:</strong> {{ pedido.repartidor_asignado.nombre_completo if pedido.repartidor_asignado else '-' }}</p>
+                <p><strong>Dirección de Entrega:</strong>
+                    {% if pedido.direccion_entrega %}
+                        {{ pedido.direccion_entrega.calle_numero }}, {{ pedido.direccion_entrega.colonia or '' }}, {{ pedido.direccion_entrega.ciudad }}
+                        {% if pedido.direccion_entrega.referencias %}<br><em>Referencias: {{ pedido.direccion_entrega.referencias }}</em>{% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </p>
+                <p><strong>Fecha/Hora Programada:</strong> {{ format_datetime(pedido.fecha_entrega_programada) if pedido.fecha_entrega_programada else '-' }}</p>
+                {% endif %}
+                <p><strong>Requiere Factura:</strong> {{ 'Sí' if pedido.requiere_factura else 'No' }}</p>
+                <p><strong>Notas del Pedido:</strong> {{ pedido.notas_pedido or '-' }}</p>
+            </div>
+            <div class="col-md-6">
+                <h2 class="card__subtitle">Totales y Pago</h2>
+                <p><strong>Subtotal Productos Pollo:</strong> {{ format_currency(pedido.subtotal_productos_pollo) }}</p>
+                <p><strong>Subtotal Productos Adicionales:</strong> {{ format_currency(pedido.subtotal_productos_adicionales) }}</p>
+                <p><strong>Descuento Aplicado:</strong> {{ format_currency(pedido.descuento_aplicado) }}</p>
+                <p><strong>Costo de Envío:</strong> {{ format_currency(pedido.costo_envio) }}</p>
+                <p class="total-pedido"><strong>Total Pedido:</strong> {{ format_currency(pedido.total_pedido) }}</p> {# Definir estilos para .total-pedido #}
+
+                {% if pedido.forma_pago == FormaPago.EFECTIVO %} {# Mostrar detalles de efectivo si aplica #}
+                <p><strong>Paga Con:</strong> {{ format_currency(pedido.paga_con) if pedido.paga_con is not none else '-' }}</p>
+                <p><strong>Cambio Entregado:</strong> {{ format_currency(pedido.cambio_entregado) if pedido.cambio_entregado is not none else '-' }}</p>
+                {% endif %}
+                {# Mostrar detalles de otros pagos si aplica (ej. referencia de transferencia) #}
+            </div>
+        </div>
+
+        <div class="mt-l"> {# Usar clase de espaciado #}
+            <h2 class="card__subtitle">Detalle de Productos</h2>
+            {% if pedido.items.count() > 0 or pedido.productos_adicionales_pedido.count() > 0 %}
+                <ul class="list-group"> {# Definir estilos para .list-group en CSS #}
+                    {% for item in pedido.items %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> {# Definir estilos para .list-group-item en CSS #}
+                            {{ item.cantidad }} {{ item.unidad_medida }} {{ item.descripcion_item_venta }}
+                            {% if item.notas_item %}<br><em>Notas: {{ item.notas_item }}</em>{% endif %}
+                            <span class="ml-auto">{{ format_currency(item.subtotal_item) }}</span> {# Usar clase de utilidad #}
+                        </li>
+                    {% endfor %}
+                    {% for pa in pedido.productos_adicionales_pedido %}
+                         <li class="list-group-item d-flex justify-content-between align-items-center"> {# Usar clases de lista y flex #}
+                            {{ pa.cantidad_pa }} {{ pa.unidad_medida_pa }} {{ pa.nombre_pa }} (PA)
+                            {% if pa.notas_pa %}<br><em>Notas: {{ pa.notas_pa }}</em>{% endif %}
+                            <span class="ml-auto">{{ format_currency(pa.subtotal_pa) }}</span> {# Usar clase de utilidad #}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Este pedido no tiene productos registrados.</p>
+            {% endif %}
+        </div>
+
+        {# Sección de Movimientos de Caja Asociados (Opcional para MVP, si se implementa) #}
+        {#
+        <div class="mt-l">
+            <h2 class="card__subtitle">Movimientos de Caja Asociados</h2>
+            {% if pedido.movimientos_caja_asociados.count() > 0 %}
+                <p>Mostrar lista de movimientos de caja aquí...</p>
+            {% else %}
+                <p>No hay movimientos de caja asociados a este pedido.</p>
+            {% endif %}
+        </div>
+        #}
+
+    </div>
+    <div class="card__footer text-center">
+        {% if pedido.puede_ser_modificado() %} {# Usar método del modelo #}
+        <a href="{{ url_for('pedidos.editar_pedido', pedido_id=pedido.id) }}" class="btn btn--primary">Editar Pedido</a>
+        {% endif %}
+        <a href="{{ url_for('pedidos.listar_pedidos') }}" class="btn btn--secondary">Volver a la Lista</a>
+        {# Botones de acción adicionales #}
+        {#
+        <button type="button" class="btn btn--success ml-s">Procesar Pago</button>
+        <button type="button" class="btn btn--warning ml-s">Cambiar Estado</button>
+        #}
+        <a href="{{ url_for('pedidos.imprimir_ticket', pedido_id=pedido.id) }}" class="btn btn--light ml-s" target="_blank">Imprimir Ticket</a>
+        <a href="{{ url_for('pedidos.imprimir_comanda', pedido_id=pedido.id) }}" class="btn btn--light ml-s" target="_blank">Imprimir Comanda</a>
+    </div>
+</div>
+{% endblock %}

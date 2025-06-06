@@ -1,14 +1,16 @@
-
 <header class="site-header">
     <div class="container">
         <a href="{{ url_for('main.index') }}" class="site-header__logo">🐔 Pollería Montiel</a>
         <nav class="site-header__nav">
-            <ul>
+            <button class="menu-toggle" aria-label="Toggle navigation">
+                ☰ <!-- Icono de hamburguesa simple -->
+            </button>
+            <ul class="nav-menu"> {# Añadir una clase para el menú #}
                 {% if current_user and current_user.is_authenticated %}
                     <li><a href="{{ url_for('main.index') }}">Inicio</a></li>
                     <li><a href="{{ url_for('pedidos.listar_pedidos') if 'pedidos.listar_pedidos' in config['ROUTES'] else '#' }}">Pedidos</a></li>
                     <li><a href="{{ url_for('caja.dashboard_caja') if 'caja.dashboard_caja' in config['ROUTES'] else '#' }}">Caja</a></li>
-                    
+
                     {% if current_user.has_role('ADMINISTRADOR') %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle">Admin ▾</a>
@@ -27,7 +29,6 @@
                 {% endif %}
             </ul>
         </nav>
-        <!-- Podrías añadir un botón de menú hamburguesa para móviles aquí -->
     </div>
 </header>
 <style>
@@ -80,6 +81,51 @@
 .site-header__nav .dropdown:hover .dropdown-menu {
     display: block;
 }
+/* Estilos para el botón de menú en móviles */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gris-oscuro);
+}
+.nav-menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+    .site-header__nav ul {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: var(--blanco);
+        border: 1px solid rgba(0,0,0,.15);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--sombra-md);
+    }
+    .site-header__nav ul.show {
+        display: flex;
+    }
+    .site-header__nav .dropdown {
+        width: 100%;
+    }
+    .site-header__nav .dropdown-menu {
+        position: static;
+        width: 100%;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        margin: 0;
+    }
+}
 </style>
 <script>
 // Pequeño script para el dropdown si se prefiere control JS en lugar de :hover
@@ -102,4 +148,13 @@
 //         }
 //     });
 // });
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const navMenu = document.querySelector('.nav-menu');
+    if (menuToggle && navMenu) {
+        menuToggle.addEventListener('click', function() {
+            navMenu.classList.toggle('show');
+        });
+    }
+});
 </script>

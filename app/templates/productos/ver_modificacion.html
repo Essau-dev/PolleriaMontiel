@@ -1,0 +1,66 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <p class="card__subtitle">Código: {{ modificacion.codigo_modif }}</p>
+            </div>
+            <div class="card__body">
+                <p><strong>Nombre:</strong> {{ modificacion.nombre }}</p>
+                 <p><strong>Estado:</strong>
+                     <span class="status-indicator status-indicator--{{ 'success' if modificacion.activo else 'danger' }}">
+                        {{ 'Activa' if modificacion.activo else 'Inactiva' }}
+                    </span>
+                </p>
+                {% if modificacion.descripcion %}
+                <p><strong>Descripción:</strong> {{ modificacion.descripcion }}</p>
+                {% endif %}
+
+                 <h3 class="card__subtitle mt-l">Aplica a Productos Principales</h3>
+                {% if modificacion.productos_asociados.count() > 0 %}
+                <ul class="list-group">
+                    {% for producto in modificacion.productos_asociados %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('productos.ver_producto', producto_id=producto.id) }}">{{ producto.nombre }} ({{ producto.id }})</a>
+                         <span class="status-indicator status-indicator--{{ 'success' if producto.activo else 'danger' }} status-indicator--sm">
+                            {{ 'Activo' if producto.activo else 'Inactivo' }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No aplica directamente a productos principales.</p>
+                {% endif %}
+
+                <h3 class="card__subtitle mt-l">Aplica a Subproductos</h3>
+                 {% if modificacion.subproductos_asociados.count() > 0 %}
+                <ul class="list-group">
+                    {% for subproducto in modificacion.subproductos_asociados %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('productos.ver_subproducto', subproducto_id=subproducto.id) }}">{{ subproducto.nombre }} ({{ subproducto.codigo_subprod }})</a>
+                         <span class="status-indicator status-indicator--{{ 'success' if subproducto.activo else 'danger' }} status-indicator--sm">
+                            {{ 'Activo' if subproducto.activo else 'Inactivo' }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No aplica a subproductos.</p>
+                {% endif %}
+
+            </div>
+            <div class="card__footer text-center">
+                 {% if current_user.is_admin() %}
+                 <a href="{{ url_for('productos.editar_modificacion', modificacion_id=modificacion.id) }}" class="btn btn--secondary mr-s">Editar Modificación</a>
+                 {% endif %}
+                 <a href="{{ url_for('productos.listar_modificaciones') }}" class="btn btn--secondary">Volver a Modificaciones</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

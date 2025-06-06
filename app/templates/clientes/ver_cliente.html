@@ -1,0 +1,102 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+    </div>
+    <div class="card__body">
+        <p><strong>Nombre Completo:</strong> {{ client.get_nombre_completo() }}</p>
+        <p><strong>Alias:</strong> {{ client.alias or '-' }}</p>
+        <p><strong>Tipo de Cliente:</strong> {{ client.tipo_cliente.name.replace('_', ' ').title() }}</p> {# Mostrar nombre descriptivo del Enum #}
+        <p><strong>Notas del Cliente:</strong> {{ client.notas_cliente or '-' }}</p>
+        <p><strong>Estado:</strong>
+            {% if client.activo %}
+                <span class="estado-activo">Activo</span>
+            {% else %}
+                <span class="estado-inactivo">Inactivo</span>
+            {% endif %}
+        </p>
+        <p><strong>Fecha de Registro:</strong> {{ format_datetime(client.fecha_registro) }}</p> {# Usar helper #}
+
+        <div class="mt-l"> {# Usar clase de espaciado #}
+            <h2 class="card__subtitle">Teléfonos</h2>
+            <a href="{{ url_for('clientes.crear_telefono', client_id=client.id) }}" class="btn btn--primary btn--sm mb-s">Agregar Teléfono</a> {# Usar clase de espaciado #}
+            {% if client.telefonos.count() > 0 %}
+                <ul class="list-group"> {# Definir estilos para .list-group en CSS #}
+                    {% for telefono in client.telefonos %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> {# Definir estilos para .list-group-item en CSS #}
+                            {{ telefono.numero_telefono }} ({{ telefono.tipo_telefono.name.replace('_', ' ').title() }})
+                            {% if telefono.es_principal %}
+                                <span class="badge badge--primary ml-s">Principal</span> {# Definir estilos para .badge en CSS #}
+                            {% endif %}
+                            <div class="ml-auto"> {# Usar clase de utilidad #}
+                                {% if not telefono.es_principal %}
+                                <form action="{{ url_for('clientes.marcar_telefono_principal', phone_id=telefono.id) }}" method="POST" class="d-inline-block">
+                                    <button type="submit" class="btn btn--secondary btn--sm" title="Marcar como principal">Principal</button>
+                                </form>
+                                {% endif %}
+                                <a href="{{ url_for('clientes.editar_telefono', phone_id=telefono.id) }}" class="btn btn--secondary btn--sm">Editar</a>
+                                <form action="{{ url_for('clientes.eliminar_telefono', phone_id=telefono.id) }}" method="POST" class="d-inline-block">
+                                    <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('¿Estás seguro de eliminar este teléfono?');">Eliminar</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No hay teléfonos registrados para este cliente.</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-l"> {# Usar clase de espaciado #}
+            <h2 class="card__subtitle">Direcciones</h2>
+            <a href="{{ url_for('clientes.crear_direccion', client_id=client.id) }}" class="btn btn--primary btn--sm mb-s">Agregar Dirección</a> {# Usar clase de espaciado #}
+            {% if client.direcciones.count() > 0 %}
+                 <ul class="list-group"> {# Usar clases de lista #}
+                    {% for direccion in client.direcciones %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> {# Usar clases de lista y flex #}
+                            {{ direccion.calle_numero }}, {{ direccion.colonia or '' }}, {{ direccion.ciudad }} ({{ direccion.tipo_direccion.name.replace('_', ' ').title() }})
+                            {% if direccion.es_principal %}
+                                <span class="badge badge--primary ml-s">Principal</span> {# Usar clases de badge #}
+                            {% endif %}
+                            <div class="ml-auto"> {# Usar clase de utilidad #}
+                                {% if not direccion.es_principal %}
+                                <form action="{{ url_for('clientes.marcar_direccion_principal', address_id=direccion.id) }}" method="POST" class="d-inline-block">
+                                    <button type="submit" class="btn btn--secondary btn--sm" title="Marcar como principal">Principal</button>
+                                </form>
+                                {% endif %}
+                                <a href="{{ url_for('clientes.editar_direccion', address_id=direccion.id) }}" class="btn btn--secondary btn--sm">Editar</a>
+                                <form action="{{ url_for('clientes.eliminar_direccion', address_id=direccion.id) }}" method="POST" class="d-inline-block">
+                                    <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('¿Estás seguro de eliminar esta dirección?');">Eliminar</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No hay direcciones registradas para este cliente.</p>
+            {% endif %}
+        </div>
+
+        {# Sección de Historial de Pedidos (comentada en routes, pero se puede añadir aquí) #}
+        {#
+        <div class="mt-l">
+            <h2 class="card__subtitle">Historial de Pedidos</h2>
+            {% if client.pedidos.count() > 0 %}
+                <p>Mostrar lista de pedidos aquí...</p>
+                <a href="{{ url_for('clientes.historial_pedidos_cliente', client_id=client.id) }}" class="btn btn--info btn--sm">Ver Historial Completo</a>
+            {% else %}
+                <p>Este cliente no tiene pedidos registrados.</p>
+            {% endif %}
+        </div>
+        #}
+
+    </div>
+    <div class="card__footer text-center">
+        <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn--secondary">Volver a la Lista</a>
+    </div>
+</div>
+{% endblock %}

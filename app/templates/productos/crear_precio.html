@@ -1,0 +1,47 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('productos.crear_precio') }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {# Campos para seleccionar Producto O Subproducto (requiere JS/AJAX o lógica en ruta) #}
+                    {# Para MVP, podríamos tener selectores separados y validar en backend que solo uno se use #}
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ render_field(form.producto_id, class="form-control") }} {# SelectField poblado en la ruta #}
+                        </div>
+                        <div class="col-md-6">
+                            {{ render_field(form.subproducto_id, class="form-control") }} {# SelectField poblado en la ruta #}
+                        </div>
+                    </div>
+
+                    {{ render_field(form.tipo_cliente, class="form-control") }}
+                    {{ render_field(form.precio_kg, class="form-control") }}
+                    {{ render_field(form.cantidad_minima_kg, class="form-control") }}
+                    {{ render_field(form.etiqueta_promo, class="form-control") }}
+                    {{ render_field(form.fecha_inicio_vigencia, class="form-control") }}
+                    {{ render_field(form.fecha_fin_vigencia, class="form-control") }}
+                    {{ render_field(form.activo, class="form-check-input") }}
+
+                    <div class="form-group mt-l">
+                        {{ form.submit(class="btn btn--primary btn-block") }}
+                    </div>
+                </form>
+            </div>
+             <div class="card__footer text-center">
+                 <a href="{{ url_for('productos.listar_precios') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nota de Preparación Pedido #{{ format_pedido_folio(pedido.id) }}</title> {# Usar helper #}
+    <style>
+        /* Estilos básicos para impresión de comanda/nota de preparación */
+        body {
+            font-family: sans-serif; /* Fuente legible */
+            font-size: 12px; /* Tamaño de fuente adecuado */
+            width: 80mm; /* Ancho típico de comanda de 80mm */
+            margin: 0 auto; /* Centrar */
+            padding: 5mm; /* Espacio alrededor */
+        }
+        .center {
+            text-align: center;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .large {
+            font-size: 1.5em; /* Más grande para folio */
+        }
+        .divider {
+            border-top: 1px solid #000;
+            margin: 10px 0;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            margin-bottom: 8px; /* Espacio entre ítems */
+            line-height: 1.4;
+        }
+        .item-qty {
+            display: inline-block;
+            width: 20%;
+            font-weight: bold;
+        }
+        .item-desc {
+            display: inline-block;
+            width: 75%;
+        }
+        .notes {
+            font-size: 0.9em;
+            font-style: italic;
+            margin-left: 20%; /* Indentar notas */
+        }
+         @media print {
+            body {
+                width: auto; /* Permitir que el ancho se ajuste a la impresora */
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <p class="bold large">NOTA DE PREPARACIÓN</p>
+        <p class="bold">PEDIDO #{{ format_pedido_folio(pedido.id) }}</p> {# Usar helper #}
+        <p>{{ format_datetime(pedido.fecha_creacion) }}</p> {# Usar helper #}
+        <div class="divider"></div>
+    </div>
+
+    {% if pedido.cliente %}
+    <p class="bold">Cliente: {{ pedido.cliente.get_nombre_completo() }}</p>
+        {% if pedido.cliente.alias %}<p>Alias: {{ pedido.cliente.alias }}</p>{% endif %}
+        {% if pedido.tipo_venta == TipoVenta.DOMICILIO %}
+            <p class="bold">Tipo: Domicilio</p>
+            {% if pedido.repartidor_asignado %}<p>Repartidor: {{ pedido.repartidor_asignado.nombre_completo }}</p>{% endif %}
+            {% if pedido.fecha_entrega_programada %}<p>Prog: {{ format_datetime(pedido.fecha_entrega_programada) }}</p>{% endif %}
+        {% else %}
+             <p class="bold">Tipo: Mostrador</p>
+        {% endif %}
+    <div class="divider"></div>
+    {% endif %}
+
+    <p class="bold">Productos a Preparar:</p>
+    <ul>
+        {% for item in pedido.items %}
+        <li>
+            <span class="item-qty">{{ item.cantidad|string.rstrip('0').rstrip('.') }} {{ item.unidad_medida }}</span> {# Formatear cantidad #}
+            <span class="item-desc">{{ item.descripcion_item_venta }}</span>
+            {% if item.notas_item %}<div class="notes">Notas: {{ item.notas_item }}</div>{% endif %}
+        </li>
+        {% endfor %}
+         {% for pa in pedido.productos_adicionales_pedido %}
+        <li>
+            <span class="item-qty">{{ pa.cantidad_pa|string.rstrip('0').rstrip('.') }} {{ pa.unidad_medida_pa }}</span> {# Formatear cantidad #}
+            <span class="item-desc">{{ pa.nombre_pa }} (PA)</span>
+            {% if pa.notas_pa %}<div class="notes">Notas: {{ pa.notas_pa }}</div>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    <div class="divider"></div>
+
+    {% if pedido.notas_pedido %}
+    <p class="bold">Notas Generales:</p>
+    <p>{{ pedido.notas_pedido }}</p>
+    <div class="divider"></div>
+    {% endif %}
+
+    <div class="center">
+        <p>Estado: {{ pedido.estado_pedido.name.replace('_', ' ').title() }}</p>
+        <p>SGPM v0.1 (MVP)</p>
+    </div>
+
+</body>
+</html>

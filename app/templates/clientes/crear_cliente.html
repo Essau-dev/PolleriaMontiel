@@ -1,0 +1,37 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro para renderizar campos #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8"> {# Usar clases de grid para centrar y limitar ancho en desktop #}
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('clientes.crear_cliente') }}">
+                    {{ form.hidden_tag() }} {# Campo oculto para CSRF token #}
+
+                    {{ render_field(form.nombre, class="form-control") }}
+                    {{ render_field(form.apellidos, class="form-control") }}
+                    {{ render_field(form.alias, class="form-control") }}
+                    {{ render_field(form.tipo_cliente, class="form-control") }}
+                    {{ render_field(form.notas_cliente, class="form-control") }}
+
+                    <div class="form-group form-check mb-m"> {# Usar clases de espaciado #}
+                        {{ form.activo(class="form-check-input") }}
+                        {{ form.activo.label(class="form-check-label") }}
+                    </div>
+
+                    <button type="submit" class="btn btn--primary btn-block">{{ form.submit.label.text }}</button>
+                </form>
+            </div>
+            <div class="card__footer text-center">
+                 <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

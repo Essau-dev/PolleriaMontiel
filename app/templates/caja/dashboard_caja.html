@@ -1,0 +1,91 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+    </div>
+    <div class="card__body">
+        {% if corte_abierto %}
+            <div class="alert alert--info mb-m" role="alert">
+                Tienes un corte de caja abierto. ID: <strong>{{ corte_abierto.id }}</strong>.
+                Iniciado por: <strong>{{ corte_abierto.usuario_responsable_corte.nombre_completo }}</strong>
+                el {{ format_datetime(corte_abierto.fecha_apertura_periodo) }}.
+                Saldo Inicial Teórico: <strong>{{ format_currency(corte_abierto.saldo_inicial_efectivo_teorico) }}</strong>.
+            </div>
+
+            <div class="d-flex justify-content-around mb-l"> {# Usar clases de utilidad para layout #}
+                <a href="{{ url_for('caja.cierre_caja', corte_id=corte_abierto.id) }}" class="btn btn--danger btn--lg">Realizar Cierre de Caja</a>
+                <a href="{{ url_for('caja.registrar_movimiento') }}" class="btn btn--primary btn--lg">Registrar Movimiento</a>
+            </div>
+
+            <h2 class="card__subtitle mt-l">Movimientos Recientes del Corte Actual</h2>
+            {% if movimientos_recientes %}
+                <div class="table-responsive"> {# Wrapper para scroll en pantallas pequeñas #}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha/Hora</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Forma Pago</th>
+                                <th>Motivo</th>
+                                <th>Pedido Asoc.</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movimiento in movimientos_recientes %}
+                            <tr>
+                                <td>{{ movimiento.id }}</td>
+                                <td>{{ format_datetime(movimiento.fecha_movimiento) }}</td>
+                                <td>
+                                    {% if movimiento.tipo_movimiento.value == 'INGRESO' %}
+                                        <span class="estado-activo">{{ movimiento.tipo_movimiento.name.replace('_', ' ').title() }}</span>
+                                    {% elif movimiento.tipo_movimiento.value == 'EGRESO' %}
+                                        <span class="estado-inactivo">{{ movimiento.tipo_movimiento.name.replace('_', ' ').title() }}</span>
+                                    {% else %}
+                                        {{ movimiento.tipo_movimiento.name.replace('_', ' ').title() }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ format_currency(movimiento.monto_movimiento) }}</td>
+                                <td>{{ movimiento.forma_pago_efectuado.name.replace('_', ' ').title() }}</td>
+                                <td>{{ movimiento.motivo_movimiento }}</td>
+                                <td>
+                                    {% if movimiento.pedido_id %}
+                                        <a href="{{ url_for('pedidos.ver_pedido', pedido_id=movimiento.pedido_id) if 'pedidos.ver_pedido' in config['ROUTES'] else '#' }}">{{ movimiento.pedido_id }}</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ movimiento.notas_movimiento or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No hay movimientos registrados en el corte actual.</p>
+            {% endif %}
+
+        {% else %}
+            <div class="alert alert--warning mb-m" role="alert">
+                No tienes un corte de caja abierto. Debes abrir uno para registrar movimientos y ventas.
+            </div>
+            <div class="text-center">
+                <a href="{{ url_for('caja.apertura_caja') }}" class="btn btn--primary btn--lg">Realizar Apertura de Caja</a>
+            </div>
+        {% endif %}
+
+        {% if current_user.is_admin() %}
+            <div class="mt-l text-center">
+                 <a href="{{ url_for('caja.listar_cortes') }}" class="btn btn--secondary btn--sm">Ver Historial de Cortes de Caja</a>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

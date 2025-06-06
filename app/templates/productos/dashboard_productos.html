@@ -1,0 +1,121 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+                <div class="d-flex justify-content-between align-items-center mt-s">
+                    {# Formulario de búsqueda #}
+                    <form method="GET" action="{{ url_for('productos.dashboard_productos') }}" class="form-inline">
+                        <div class="form-group mr-s"> {# Usar clase de espaciado #}
+                            <input type="text" name="q" class="form-control form-control--sm" placeholder="Buscar producto..." value="{{ search_query or '' }}">
+                        </div>
+                        <div class="form-group form-check mr-s"> {# Usar clase de espaciado #}
+                            <input type="checkbox" class="form-check-input" id="show_inactive" name="show_inactive" value="true" {% if include_inactive %}checked{% endif %}>
+                            <label class="form-check-label" for="show_inactive">Mostrar inactivos</label>
+                        </div>
+                        <button type="submit" class="btn btn--secondary btn--sm">Buscar</button>
+                    </form>
+                    {# Botón para crear nuevo producto (Solo Admin) #}
+                    {% if current_user.is_admin() %} {# Verificar rol #}
+                    <a href="{{ url_for('productos.crear_producto') }}" class="btn btn--primary btn--sm">Nuevo Producto</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card__body">
+                {% if productos %}
+                <div class="table-responsive"> {# Clase para tablas responsivas #}
+                    <table class="table table--striped"> {# Clases de tabla #}
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for producto in productos %}
+                            <tr>
+                                <td>{{ producto.id }}</td>
+                                <td>{{ producto.nombre }}</td>
+                                <td>{{ producto.categoria }}</td> {# Mostrar valor del Enum #}
+                                <td>
+                                    <span class="status-indicator status-indicator--{{ 'success' if producto.activo else 'danger' }}">
+                                        {{ 'Activo' if producto.activo else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('productos.ver_producto', producto_id=producto.id) }}" class="btn btn--info btn--sm mr-xs">Ver</a> {# Usar clase de espaciado #}
+                                    {% if current_user.is_admin() %} {# Verificar rol #}
+                                    <a href="{{ url_for('productos.editar_producto', producto_id=producto.id) }}" class="btn btn--secondary btn--sm mr-xs">Editar</a> {# Usar clase de espaciado #}
+                                    {% if producto.activo %}
+                                    <form action="{{ url_for('productos.desactivar_producto', producto_id=producto.id) }}" method="POST" class="d-inline"> {# Usar clase de utilidad #}
+                                        {{ form.hidden_tag() if form else '' }} {# CSRF token si se pasa un form #}
+                                        <button type="submit" class="btn btn--warning btn--sm" onclick="return confirm('¿Estás seguro de desactivar este producto?');">Desactivar</button>
+                                    </form>
+                                    {% else %}
+                                     <form action="{{ url_for('productos.activar_producto', producto_id=producto.id) }}" method="POST" class="d-inline"> {# Usar clase de utilidad #}
+                                        {{ form.hidden_tag() if form else '' }} {# CSRF token si se pasa un form #}
+                                        <button type="submit" class="btn btn--success btn--sm" onclick="return confirm('¿Estás seguro de activar este producto?');">Activar</button>
+                                    </form>
+                                    {% endif %}
+                                    {# Eliminar solo si no tiene relaciones activas y es Admin #}
+                                    {# La lógica de si se puede eliminar o no debe estar en el backend/servicio #}
+                                    {# <form action="{{ url_for('productos.eliminar_producto', producto_id=producto.id) }}" method="POST" class="d-inline"> #}
+                                    {#     {{ form.hidden_tag() if form else '' }} #}
+                                    {#     <button type="submit" class="btn btn--danger btn--sm" onclick="return confirm('¿Estás seguro de eliminar este producto? Esta acción es irreversible.');">Eliminar</button> #}
+                                    {# </form> #}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {# Paginación #}
+                {% if pagination and pagination.pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {# Botón Anterior #}
+                        <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
+                            <a class="page-link" href="{{ url_for('productos.dashboard_productos', page=pagination.prev_num, q=search_query, show_inactive=include_inactive) if pagination.has_prev else '#' }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+
+                        {# Números de página #}
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                <li class="page-item {{ 'active' if page == pagination.page }}">
+                                    <a class="page-link" href="{{ url_for('productos.dashboard_productos', page=page, q=search_query, show_inactive=include_inactive) }}">{{ page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {# Botón Siguiente #}
+                        <li class="page-item {{ 'disabled' if not pagination.has_next }}">
+                            <a class="page-link" href="{{ url_for('productos.dashboard_productos', page=pagination.next_num, q=search_query, show_inactive=include_inactive) if pagination.has_next else '#' }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <p>No se encontraron productos.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card__header">
+        <h1 class="card__title mb-0">{{ title }}</h1>
+    </div>
+    <div class="card__body">
+        {% if cortes %}
+            <div class="table-responsive"> {# Wrapper para scroll en pantallas pequeñas #}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario Responsable</th>
+                            <th>Apertura</th>
+                            <th>Cierre</th>
+                            <th>Saldo Inicial Teórico</th>
+                            <th>Saldo Final Teórico</th>
+                            <th>Saldo Final Contado</th>
+                            <th>Diferencia</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for corte in cortes %}
+                        <tr>
+                            <td>{{ corte.id }}</td>
+                            <td>{{ corte.usuario_responsable_corte.nombre_completo }}</td>
+                            <td>{{ format_datetime(corte.fecha_apertura_periodo) }}</td>
+                            <td>{{ format_datetime(corte.fecha_cierre_corte) }}</td>
+                            <td>{{ format_currency(corte.saldo_inicial_efectivo_teorico) }}</td>
+                            <td>{{ format_currency(corte.saldo_final_efectivo_teorico) }}</td>
+                            <td>{{ format_currency(corte.saldo_final_efectivo_contado) }}</td>
+                            <td>
+                                {% if corte.diferencia_efectivo == 0 %}
+                                    <span class="estado-activo">{{ format_currency(corte.diferencia_efectivo) }}</span>
+                                {% elif corte.diferencia_efectivo > 0 %}
+                                    <span class="estado-info">{{ format_currency(corte.diferencia_efectivo) }} (Sobrante)</span>
+                                {% else %}
+                                    <span class="estado-inactivo">{{ format_currency(corte.diferencia_efectivo) }} (Faltante)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if corte.estado_corte.value == 'ABIERTO' %}
+                                    <span class="estado-info">{{ corte.estado_corte.name.replace('_', ' ').title() }}</span>
+                                {% elif corte.estado_corte.value == 'CERRADO_CONCILIADO' %}
+                                    <span class="estado-activo">{{ corte.estado_corte.name.replace('_', ' ').title() }}</span>
+                                {% elif corte.estado_corte.value == 'CERRADO_CON_DIFERENCIA' %}
+                                    <span class="estado-warning">{{ corte.estado_corte.name.replace('_', ' ').title() }}</span>
+                                {% else %}
+                                     {{ corte.estado_corte.name.replace('_', ' ').title() }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('caja.ver_corte', corte_id=corte.id) }}" class="btn btn--info btn--sm">Ver Detalle</a>
+                                {# Opcional: Botón para reabrir corte si el estado lo permite y el usuario es Admin #}
+                                {# {% if corte.estado_corte != 'ABIERTO' and current_user.is_admin() %}
+                                <form action="{{ url_for('caja.reabrir_corte', corte_id=corte.id) }}" method="POST" class="d-inline-block">
+                                    <button type="submit" class="btn btn--warning btn--sm" onclick="return confirm('¿Estás seguro de reabrir este corte?');">Reabrir</button>
+                                </form>
+                                {% endif %} #}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Paginación #}
+            {% if pagination.pages > 1 %}
+                <nav aria-label="Navegación de cortes">
+                    <ul class="pagination justify-content-center"> {# Definir estilos para .pagination en CSS #}
+                        {% if pagination.has_prev %}
+                            <li><a href="{{ url_for('caja.listar_cortes', page=pagination.prev_num) }}">Anterior</a></li>
+                        {% else %}
+                            <li class="disabled"><span>Anterior</span></li>
+                        {% endif %}
+                        {% for page in pagination.iter_pages() %}
+                            {% if page %}
+                                {% if page != pagination.page %}
+                                    <li><a href="{{ url_for('caja.listar_cortes', page=page) }}">{{ page }}</a></li>
+                                {% else %}
+                                    <li class="active"><span>{{ page }}</span></li> {# Definir clase de estilo para página activa #}
+                                {% endif %}
+                            {% else %}
+                                <li class="ellipsis"><span>...</span></li> {# Definir clase de estilo para elipsis #}
+                            {% endif %}
+                        {% endfor %}
+                        {% if pagination.has_next %}
+                            <li><a href="{{ url_for('caja.listar_cortes', page=pagination.next_num) }}">Siguiente</a></li>
+                        {% else %}
+                            <li class="disabled"><span>Siguiente</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+        {% else %}
+            <p>No se encontraron cortes de caja históricos.</p>
+        {% endif %}
+    </div>
+    <div class="card__footer text-center">
+        <a href="{{ url_for('caja.dashboard_caja') }}" class="btn btn--secondary">Volver al Dashboard de Caja</a>
+    </div>
+</div>
+{% endblock %}

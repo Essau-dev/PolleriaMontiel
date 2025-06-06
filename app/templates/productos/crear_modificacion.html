@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+{% from "shared/_form_field.html" import render_field %} {# Importar macro #}
+
+{% block title %}{{ title }} - SGPM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card__header">
+                <h1 class="card__title mb-0">{{ title }}</h1>
+            </div>
+            <div class="card__body">
+                <form method="POST" action="{{ url_for('productos.crear_modificacion') }}">
+                    {{ form.hidden_tag() }} {# CSRF token #}
+
+                    {{ render_field(form.codigo_modif, class="form-control") }}
+                    {{ render_field(form.nombre, class="form-control") }}
+                    {{ render_field(form.descripcion, class="form-control") }}
+                    {{ render_field(form.activo, class="form-check-input") }}
+
+                    {# Campos para asociar a Productos/Subproductos (puede requerir JS/AJAX) #}
+                    {# Para MVP, podría ser un SelectMultipleField o una lista de checkboxes #}
+                    {# {{ render_field(form.productos_asociados, class="form-control") }} #}
+                    {# {{ render_field(form.subproductos_asociados, class="form-control") }} #}
+                    <div class="form-group">
+                        <label class="form-label">Asociar a Productos Principales (Selecciona uno o varios)</label>
+                        {# Este campo se poblará en la ruta con productos activos #}
+                        {{ form.productos_asociados(class="form-control", size=5) }} {# Usar size para mostrar varias opciones #}
+                    </div>
+                     <div class="form-group">
+                        <label class="form-label">Asociar a Subproductos (Selecciona uno o varios)</label>
+                        {# Este campo se poblará en la ruta con subproductos activos #}
+                        {{ form.subproductos_asociados(class="form-control", size=5) }} {# Usar size para mostrar varias opciones #}
+                    </div>
+
+
+                    <div class="form-group mt-l">
+                        {{ form.submit(class="btn btn--primary btn-block") }}
+                    </div>
+                </form>
+            </div>
+             <div class="card__footer text-center">
+                 <a href="{{ url_for('productos.listar_modificaciones') }}" class="btn btn--secondary btn--sm">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,13 +1,23 @@
+# Dependencias principales del proyecto
+Flask>=2.0.0 # Framework web
+SQLAlchemy>=1.4.0 # ORM
+Flask-SQLAlchemy>=2.5.0 # Integración de SQLAlchemy con Flask
+Flask-WTF>=1.0.0 # Integración de WTForms con Flask para formularios y CSRF
+Flask-Login>=0.5.0 # Gestión de sesiones de usuario
+python-dotenv>=0.19.0 # Carga de variables de entorno desde .env
+Werkzeug>=2.0.0 # Utilidades para WSGI, hashing (incluido con Flask, pero buena práctica listarlo si se usa directamente)
+Flask-Migrate>=3.1.0 # Gestión de migraciones de base de datos con Alembic
 
-Flask>=2.0.0 # O la versión que prefieras, ej. 3.0.0
-SQLAlchemy>=1.4.0 # O la versión que prefieras, ej. 2.0
-Flask-SQLAlchemy>=2.5.0
-Flask-WTF>=1.0.0
-Flask-Login>=0.5.0
-python-dotenv>=0.19.0
-Werkzeug>=2.0.0 # Para hashing, aunque Flask lo incluye
+# Dependencias para desarrollo (opcional pero recomendado)
+# Estas no son necesarias para que la aplicación funcione en producción,
+# pero son muy útiles durante el desarrollo.
+flake8 # Linter para aplicar guías de estilo (PEP 8)
+black # Formateador de código automático
+pytest>=6.0.0 # Framework para ejecutar tests
+pytest-flask>=1.2.0 # Plugin de pytest para testear aplicaciones Flask
+coverage>=5.0 # Herramienta para medir la cobertura de tests
 
-# Para desarrollo (opcional pero recomendado):
-flake8
-black
-Flask-Migrate # Si decides usarlo para migraciones de BD
+# Dependencias para producción (ejemplo)
+# Gunicorn es un servidor WSGI común para desplegar aplicaciones Flask
+# Descomentar si se despliega con Gunicorn
+# gunicorn>=20.0.0

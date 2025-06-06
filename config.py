@@ -1,4 +1,3 @@
-
 import os
 from dotenv import load_dotenv
 
@@ -8,7 +7,8 @@ load_dotenv(os.path.join(basedir, '.env')) # Busca el .env en el directorio raí
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'una_clave_secreta_muy_dificil_de_adivinar' # CAMBIAR EN PRODUCCIÓN
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or         'sqlite:///' + os.path.join(basedir, 'app.db') # Ruta a la BD dentro del dir 'PolleriaMontiel'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, 'app.db') # Ruta a la BD dentro del dir 'PolleriaMontiel'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Configuraciones adicionales de la aplicación (ejemplos)
@@ -19,10 +19,10 @@ class Config:
     # MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     # ADMINS = ['tu_email@example.com']
 
-    # Polleria Montiel - Configuraciones específicas (se podrían mover a la BD más adelante)
-    NOMBRE_NEGOCIO = "Pollería Montiel"
-    LIMITE_ITEMS_PA_SIN_COMISION = 3
-    MONTO_COMISION_FIJA_PA_EXTRA = 4.0
+    # Polleria Montiel - Configuraciones específicas (MOVIDAS A LA BD - Modelo ConfiguracionSistema)
+    # NOMBRE_NEGOCIO = "Pollería Montiel"
+    # LIMITE_ITEMS_PA_SIN_COMISION = 3
+    # MONTO_COMISION_FIJA_PA_EXTRA = 4.0
     # ... más configuraciones como plantillas de mensajes, etc.
 
 class DevelopmentConfig(Config):
@@ -38,7 +38,7 @@ class ProductionConfig(Config):
     DEBUG = False
     # Asegúrate de configurar DATABASE_URL y SECRET_KEY en el entorno de producción
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') # Ej: PostgreSQL
-    # Considerar otras configuraciones de seguridad y rendimiento para producción
+
 
 config = {
     'development': DevelopmentConfig,
