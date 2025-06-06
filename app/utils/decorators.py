@@ -2,7 +2,6 @@ from functools import wraps
 from typing import List, Tuple, Union # Importar para anotaciones de tipo
 from flask import abort, flash, redirect, url_for
 from flask_login import current_user
-from app.models import RolUsuario # Importar el Enum de roles
 
 # Define un alias de tipo para mayor claridad en la firma de la función
 RoleList = Union[List[str], Tuple[str, ...], str]
@@ -18,6 +17,9 @@ def role_required(roles: RoleList):
                   (ej. ['ADMINISTRADOR', 'CAJERO'], ('REPARTIDOR',), 'ADMINISTRADOR').
                   Los códigos deben coincidir con los valores del Enum RolUsuario.
     """
+    # Importar RolUsuario dentro de la función para evitar la importación circular
+    from app.models import RolUsuario
+
     # Asegura que 'roles' sea siempre una lista para una verificación consistente
     if not isinstance(roles, (list, tuple)):
         roles = [roles]

@@ -1,0 +1,491 @@
+/*
+  Pollería Montiel - Estilos Específicos para Escritorio
+  Complementa estilo.css.
+  Aplicar estilos aquí usando media queries para overrides de escritorio.
+*/
+
+/* Estilos para pantallas medianas y más grandes (ej. Tablets en horizontal, Laptops pequeñas) */
+@media (min-width: var(--breakpoint-md)) {
+    /* Ajustar tamaño de fuente base para desktop */
+    body {
+        font-size: calc(var(--tamano-fuente-base) + 1px); /* Ligeramente más grande */
+    }
+
+    /* Ajustar ancho del contenedor principal */
+    .container {
+        max-width: 720px; /* Definido en estilo.css, pero lo repetimos para claridad */
+    }
+
+    /* Ajustes para el contenido principal */
+    main {
+        padding: var(--espacio-xl) var(--espacio-m); /* Más padding en desktop */
+        /* max-width: 960px; */ /* El .container ya maneja el max-width */
+        margin: var(--espacio-xl) auto; /* Centrar el contenido principal */
+        background: var(--gris-elemento); /* Fondo del main content */
+        box-shadow: var(--sombra-md); /* Sombra para el main content */
+        border-radius: var(--border-radius-md); /* Bordes redondeados */
+    }
+
+
+    /* Navegación: Cambiar de menú hamburguesa a barra horizontal */
+    .site-header {
+        /* Eliminar estilos de header fijo si se aplicaron en mobile */
+        position: static;
+        box-shadow: none; /* Eliminar sombra del header si se aplica en mobile */
+        margin-bottom: 0; /* Eliminar margen debajo del header */
+        padding: var(--espacio-s) 0; /* Ajustar padding del header */
+        background-color: var(--gris-elemento); /* Fondo del header en desktop */
+        border-bottom: var(--border-width) solid var(--gris-borde); /* Borde inferior */
+    }
+
+    .site-header .container {
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .site-header__logo {
+        color: var(--gris-texto-principal); /* Color del logo en desktop */
+        font-size: 1.6em; /* Ajustar tamaño del logo/título */
+        font-weight: 700;
+    }
+     .site-header__logo:hover {
+        color: var(--rojo-principal); /* Color al pasar el mouse */
+     }
+
+
+    .site-header__nav .menu-toggle {
+        display: none; /* Ocultar botón de menú hamburguesa en desktop */
+    }
+
+    .site-header__nav .nav-menu {
+        display: flex; /* Mostrar menú como flexbox horizontal */
+        flex-direction: row;
+        position: static; /* Eliminar posicionamiento absoluto de móvil */
+        width: auto; /* Ancho automático */
+        background-color: transparent; /* Fondo transparente */
+        box-shadow: none; /* Sin sombra */
+        border: none; /* Sin borde */
+        padding: 0; /* Sin padding */
+        margin: 0; /* Sin margen */
+        align-items: center; /* Alinear ítems verticalmente */
+        gap: var(--espacio-s); /* Espacio entre ítems del menú */
+    }
+
+    .site-header__nav .nav-menu li {
+        width: auto; /* Ancho automático para ítems */
+        border-bottom: none; /* Eliminar borde inferior de ítems móviles */
+    }
+
+    .site-header__nav .nav-menu a {
+        padding: var(--espacio-s) var(--espacio-m); /* Ajustar padding de enlaces */
+        color: var(--gris-texto-secundario); /* Color de texto en desktop */
+        text-transform: uppercase; /* Texto en mayúsculas */
+        font-size: 0.9em;
+        font-weight: 600;
+        border-radius: var(--border-radius-sm); /* Bordes redondeados */
+        position: relative; /* Para el efecto de subrayado */
+        overflow: hidden;
+    }
+
+    /* Efecto de subrayado animado */
+    .site-header__nav .nav-menu a::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background-color: var(--rojo-principal); /* Color del subrayado */
+        transition: width var(--transicion-suave), left var(--transicion-suave);
+        transform: translateX(-50%);
+    }
+
+    .site-header__nav .nav-menu a:hover,
+    .site-header__nav .nav-menu a:active,
+    .site-header__nav .nav-menu a:focus-visible {
+        color: var(--rojo-principal); /* Color al pasar el mouse */
+        background-color: var(--gris-hover-sutil); /* Fondo sutil al pasar el mouse */
+        outline: none;
+    }
+
+     .site-header__nav .nav-menu a:hover::before,
+     .site-header__nav .nav-menu a:active::before,
+     .site-header__nav .nav-menu a:focus-visible::before {
+         width: 60%; /* Ancho del subrayado al pasar el mouse */
+     }
+
+    /* Estilo para el enlace activo en desktop */
+    .site-header__nav .nav-menu a.active {
+        background-color: var(--rojo-principal); /* Fondo rojo para activo */
+        color: var(--blanco); /* Texto blanco para activo */
+        font-weight: 700;
+    }
+     .site-header__nav .nav-menu a.active::before {
+         width: 60%;
+         background-color: var(--blanco); /* Subrayado blanco en activo */
+     }
+
+
+    /* Dropdown en navegación (Desktop: mostrar al pasar el mouse) */
+    .site-header__nav .dropdown {
+        position: relative; /* Necesario para posicionar el dropdown-menu */
+    }
+
+    .site-header__nav .dropdown-toggle {
+        /* Asegurar que el toggle se vea como un enlace normal en desktop */
+        padding-right: var(--espacio-xs); /* Espacio para la flecha si se usa */
+    }
+
+    .site-header__nav .dropdown-menu {
+        display: none; /* Oculto por defecto */
+        position: absolute; /* Posicionamiento absoluto respecto al dropdown toggle */
+        top: 100%; /* Debajo del toggle */
+        left: 0;
+        z-index: var(--z-index-dropdown);
+        min-width: 10rem;
+        padding: .5rem 0;
+        margin: .125rem 0 0;
+        background-color: var(--blanco);
+        border: 1px solid rgba(0,0,0,.15);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--sombra-md);
+        list-style: none; /* Eliminar viñetas */
+    }
+
+    .site-header__nav .dropdown:hover .dropdown-menu {
+        display: block; /* Mostrar dropdown al pasar el mouse */
+    }
+
+    .site-header__nav .dropdown-menu li {
+         padding: 0; /* Eliminar padding extra de ítems de lista */
+         border-bottom: none; /* Eliminar borde inferior */
+    }
+
+    .site-header__nav .dropdown-menu a {
+        padding: .5rem 1rem; /* Padding para ítems del dropdown */
+        color: var(--gris-oscuro); /* Color de texto para ítems del dropdown */
+        background-color: transparent; /* Fondo transparente */
+        display: block; /* Hacer que el enlace ocupe todo el ancho del li */
+        width: 100%;
+        text-transform: none; /* No mayúsculas en dropdown */
+        font-weight: 400; /* Peso normal */
+        border-radius: 0; /* Sin bordes redondeados */
+    }
+     .site-header__nav .dropdown-menu a::before { /* Eliminar subrayado en dropdown */
+         content: none;
+     }
+
+
+    .site-header__nav .dropdown-menu a:hover {
+        background-color: var(--gris-muy-claro); /* Fondo al pasar el mouse */
+        color: var(--rojo-principal); /* Color de texto al pasar el mouse */
+        text-decoration: none; /* Eliminar subrayado al pasar el mouse */
+    }
+
+    /* Ajustes generales para Cards y Formularios en layout de columnas */
+    /* Las clases .row y .col-md-X ya manejan gran parte de esto,
+       pero podemos añadir ajustes si es necesario */
+    .card__body .row {
+        /* Asegurar que el gap funcione correctamente si se usa */
+        margin-right: calc(-1 * var(--espacio-s) / 2);
+        margin-left: calc(-1 * var(--espacio-s) / 2);
+    }
+
+    .card__body .row > [class*="col-"] {
+         padding-right: calc(var(--espacio-s) / 2);
+         padding-left: calc(var(--espacio-s) / 2);
+    }
+
+    /* Columnas específicas para desktop */
+    .col-md-4 { width: 33.333333%; }
+    .col-md-6 { width: 50%; }
+    .col-md-8 { width: 66.666667%; }
+    .col-md-10 { width: 83.333333%; }
+    .col-md-12 { width: 100%; }
+
+
+    /* Ajustes para formularios */
+    .form-group {
+        margin-bottom: var(--espacio-l); /* Aumentar margen inferior en desktop */
+    }
+
+    .form-inline {
+        display: flex;
+        flex-flow: row wrap; /* Permitir que los elementos se envuelvan si no caben */
+        align-items: center;
+        gap: var(--espacio-s); /* Espacio entre elementos inline */
+    }
+
+    .form-inline .form-group {
+        display: flex;
+        flex: 0 0 auto; /* No crecer ni encoger */
+        flex-flow: row wrap;
+        align-items: center;
+        margin-bottom: 0; /* Eliminar margen inferior si se usa en línea */
+    }
+
+    .form-inline .form-control {
+        width: auto; /* Ancho automático para controles en línea */
+        flex-grow: 1; /* Permitir que crezcan para llenar espacio */
+    }
+
+    .form-inline .form-label {
+        margin-bottom: 0; /* Eliminar margen inferior de etiquetas en línea */
+        margin-right: var(--espacio-xs); /* Espacio entre etiqueta y control */
+    }
+
+    .form-inline .btn {
+        margin-bottom: 0; /* Eliminar margen inferior de botones en línea */
+    }
+
+    /* Layout de formulario en fila */
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--espacio-l); /* Espacio entre grupos de formulario en la fila */
+        margin-bottom: var(--espacio-l);
+    }
+    .form-row .form-group {
+        flex: 1; /* Permitir que los grupos de formulario crezcan */
+        margin-bottom: 0; /* Eliminar margen inferior dentro de la fila */
+    }
+
+    /* Grupo de formulario inline con etiqueta a la derecha */
+    .form-group-inline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--espacio-s);
+        margin-bottom: var(--espacio-m);
+    }
+    .form-group-inline label {
+        margin-bottom: 0;
+        flex-basis: 150px; /* Ancho base para la etiqueta */
+        flex-grow: 0;
+        text-align: right; /* Alinear texto de etiqueta a la derecha */
+        padding-right: var(--espacio-s);
+    }
+    .form-group-inline .form-control {
+        flex-grow: 1; /* Permitir que el control crezca */
+        width: auto; /* Ancho automático */
+    }
+
+
+    /* Ajustes para acciones de formulario (botones al final) */
+    .form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--espacio-m); /* Espacio entre botones */
+        margin-top: var(--espacio-l); /* Espacio encima de los botones */
+        justify-content: flex-end; /* Alinear botones a la derecha */
+    }
+    .form-actions .btn {
+        margin-bottom: 0; /* Eliminar margen inferior de botones */
+        width: auto; /* Ancho automático para botones */
+        display: inline-block; /* Mostrar como inline-block */
+    }
+
+
+    /* Ajustes para tablas */
+    .table-responsive {
+        overflow-x: visible; /* Desactivar scroll horizontal si la tabla cabe */
+        border: var(--border-width) solid var(--gris-borde); /* Añadir borde alrededor de la tabla */
+        border-radius: var(--border-radius-md); /* Bordes redondeados */
+        background-color: var(--gris-elemento); /* Fondo de la tabla */
+        box-shadow: var(--sombra-sm); /* Sombra sutil */
+        margin-bottom: var(--espacio-xl); /* Más margen debajo de la tabla */
+    }
+
+    .table {
+        min-width: auto; /* Eliminar min-width si ya no es necesario */
+        border-collapse: collapse; /* Asegurar colapso de bordes */
+        margin-bottom: 0; /* Eliminar margen inferior si está dentro de responsive */
+
+        th, td {
+            padding: var(--espacio-m) var(--espacio-l); /* Aumentar padding en celdas */
+            vertical-align: middle; /* Alinear contenido verticalmente */
+            border-bottom: var(--border-width) solid var(--gris-borde); /* Borde inferior */
+            white-space: normal; /* Permitir que el texto se envuelva */
+            font-size: 1em; /* Tamaño de fuente normal */
+        }
+
+        th {
+            background-color: var(--gris-medio-claro); /* Fondo para encabezados */
+            color: var(--gris-texto-principal); /* Color de texto para encabezados */
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            white-space: nowrap; /* No envolver texto en encabezados */
+            border-bottom: 3px solid var(--amarillo-principal); /* Borde inferior más grueso y de color */
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none; /* Eliminar borde inferior de la última fila */
+        }
+    }
+
+    /* Estilos para las filas rayadas */
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: var(--gris-muy-claro); /* Fondo para filas impares */
+    }
+
+    /* Estilos para la fila al pasar el mouse */
+    .table-hover tbody tr:hover {
+        background-color: var(--gris-hover-sutil); /* Fondo sutil al pasar el mouse */
+        cursor: pointer; /* Indicar que la fila es interactiva (si aplica) */
+    }
+
+
+    /* Ajustes para paginación */
+    .pagination {
+        justify-content: flex-start; /* Alinear paginación a la izquierda o centro si se prefiere */
+    }
+
+    /* Ajustes para elementos específicos que se apilan en móvil */
+    .d-flex.flex-column-md { /* Ejemplo: una clase para cambiar flex-direction a column en md */
+        flex-direction: row;
+    }
+
+    /* Ajustes para la sección de búsqueda de cliente/producto en pedidos */
+    .search-results-dropdown {
+        position: absolute; /* Posicionar el dropdown de resultados */
+        /* Ajustar ancho para que coincida con el input de búsqueda */
+        /* Esto puede requerir JS o un contenedor padre con position: relative */
+        /* width: calc(100% - var(--espacio-m) * 2); */
+        max-height: 200px; /* Altura máxima para scroll */
+        overflow-y: auto;
+        background-color: var(--blanco);
+        border: var(--border-width) solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm); /* Bordes redondeados solo abajo */
+        z-index: var(--z-index-dropdown);
+        box-shadow: var(--sombra-sm);
+        /* Ajustar posición si es necesario, puede depender del contenedor padre */
+        /* top: calc(100% + var(--espacio-xxs)); */
+        /* left: var(--espacio-m); */
+    }
+
+    .search-result-item {
+        padding: var(--espacio-xs) var(--espacio-s);
+        cursor: pointer;
+        border-bottom: var(--border-width) solid var(--gris-muy-claro);
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        background-color: var(--gris-muy-claro);
+    }
+
+
+    /* Ajustes para la sección de ítems del carrito en pedidos */
+    #cart-items-list,
+    #pas-list {
+        /* Podría tener un layout de dos columnas o más en desktop */
+        /* Si los ítems son simples, mantener la lista vertical está bien */
+    }
+
+    /* Ajustes para los ítems individuales en listas de detalles o carrito */
+    .list-group-item {
+        /* Ajustar padding o layout si es necesario */
+        padding: var(--espacio-s) var(--espacio-m);
+        /* Si se quiere layout horizontal en desktop */
+        /* flex-direction: row; */
+        /* justify-content: space-between; */
+        /* align-items: center; */
+    }
+
+    /* Ajustes para la sección de resumen y pago en pedidos */
+    #order-summary {
+        /* Podría estar en una columna lateral o tener un layout diferente */
+        /* Ejemplo: usar grid o flexbox para poner resumen y pago lado a lado */
+        display: flex;
+        flex-direction: row; /* Layout horizontal */
+        gap: var(--espacio-l); /* Espacio entre secciones */
+        align-items: flex-start; /* Alinear arriba */
+    }
+
+    #order-summary > div {
+        flex: 1; /* Permitir que las sub-secciones crezcan */
+    }
+
+    .total-pedido {
+        font-size: 1.5rem; /* Hacer el total más grande */
+        font-weight: 700;
+        margin-top: var(--espacio-m);
+        color: var(--rojo-principal);
+    }
+
+    /* Ajustes para los campos de pago en efectivo */
+    #efectivo-fields {
+        /* Podría tener un layout horizontal */
+        display: flex; /* Asegurar flexbox si se oculta/muestra */
+        flex-direction: row;
+        gap: var(--espacio-m);
+        align-items: center;
+    }
+
+    #efectivo-fields .form-group {
+        margin-bottom: 0; /* Eliminar margen inferior en layout horizontal */
+    }
+
+    #efectivo-fields .form-group:last-child {
+         flex-grow: 1; /* Permitir que la info de cambio ocupe espacio restante */
+    }
+
+    #cambio-info {
+        font-weight: 500;
+    }
+
+
+    /* Ajustes para listas de detalles (ej. en vistas de ver producto/cliente) */
+    .list-group-item {
+        /* Ajustar padding o layout si es necesario */
+    }
+
+    /* Indicadores de estado en listas/tablas */
+    .status-indicator {
+        padding: var(--espacio-xxs) var(--espacio-xs);
+        border-radius: var(--border-radius-sm);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        color: var(--blanco);
+        display: inline-block;
+    }
+    .status-indicator--success { background-color: var(--verde-exito); }
+    .status-indicator--danger { background-color: var(--rojo-error); }
+    .status-indicator--warning { background-color: var(--amarillo-advertencia); color: var(--amarillo-advertencia-texto); }
+    .status-indicator--info { background-color: var(--azul-info); }
+    .status-indicator--sm { padding: 1px var(--espacio-xs); font-size: 0.7rem; }
+
+
+}
+
+/* Estilos para pantallas grandes y más grandes (ej. Monitores de escritorio) */
+@media (min-width: var(--breakpoint-lg)) {
+    .container {
+        max-width: 960px; /* Definido en estilo.css, pero lo repetimos para claridad */
+    }
+
+    /* Ajustes adicionales si es necesario para pantallas muy grandes */
+}
+
+/* Estilos para pantallas extra grandes y más grandes */
+@media (min-width: var(--breakpoint-xl)) {
+    .container {
+        max-width: 1140px; /* Definido en estilo.css, pero lo repetimos para claridad */
+    }
+
+    /* Ajustes adicionales si es necesario para pantallas ultra-anchas */
+}
+
+/*
+  Consideraciones:
+  - Debes incluir este archivo DESPUÉS de estilo.css en tu plantilla base
+    para que los estilos de escritorio sobrescriban correctamente los estilos móviles.
+  - Utiliza las mismas variables CSS (--espacio-m, --rojo-principal, etc.)
+    definidas en estilo.css para mantener la consistencia.
+*/

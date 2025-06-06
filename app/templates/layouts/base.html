@@ -1,35 +1,60 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es"> {# Asegurar el atributo lang #}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sistema de Gestión para Pollería Montiel">
-    <!-- CSRF Token (si lo usas con JS para AJAX POST/PUT/DELETE) -->
-    <!-- <meta name="csrf-token" content="{{ csrf_token() }}"> -->
+    {# CSRF Token para peticiones AJAX (si se usa JS para POST/PUT/DELETE) #}
+    {# Descomentar y asegurar que la ruta inyecta el token si se necesita en JS #}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>{% block title %}SGPM - Pollería Montiel{% endblock %}</title>
+
+    {# Fuentes de Google Fonts #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    {# Favicon (Opcional, buena práctica) #}
+    {# <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon"> #}
+
+    {# Cargar estilos base (Mobile First) #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+    {# Cargar estilos específicos de escritorio DESPUÉS de los estilos base para sobrescribir #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_desktop.css') }}">
+
+    {# Bloque para CSS adicional específico de la página #}
     {% block head_css %}{% endblock %}
 </head>
 <body>
+    {# Incluir la barra de navegación #}
     {% include 'layouts/_nav.html' %}
 
+    {# Contenedor principal del contenido de la página #}
     <main class="container">
         {# Contenedor para mensajes flash generados por JS si es necesario #}
+        {# Se puede usar para inyectar mensajes flash recibidos vía AJAX #}
         <div id="js-flash-container"></div>
 
+        {# Mostrar mensajes flash generados por Flask #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert--{{ category if category in ['success', 'error', 'info', 'warning'] else 'info' }}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+                <div class="flash-messages-container mt-m mb-m"> {# Contenedor para agrupar mensajes #}
+                    {% for category, message in messages %}
+                        {# Usar clases de alerta definidas en estilo.css #}
+                        <div class="alert alert--{{ category if category in ['success', 'error', 'info', 'warning'] else 'info' }}" role="alert">
+                            {{ message }}
+                            {# Opcional: Botón para cerrar la alerta #}
+                            {# <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
+                                <span aria-hidden="true">&times;</span>
+                            </button> #}
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
 
+        {# Bloque principal donde cada plantilla hija insertará su contenido #}
         {% block content %}
         <!-- El contenido específico de cada página irá aquí -->
         <h1 class="card__title">Bienvenido al Sistema de Gestión de Pollería Montiel</h1>
@@ -37,9 +62,14 @@
         {% endblock %}
     </main>
 
+    {# Incluir el pie de página #}
     {% include 'layouts/_footer.html' %}
 
+    {# Scripts JS globales #}
+    {# Asegurarse de que main.js contiene helpers JS globales si se usan (ej. formatCurrencyJS) #}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block body_scripts %}{% endblock %}
+
+    {# Bloque para scripts JS adicionales específicos de la página #}
+    {% block scripts %}{% endblock %}
 </body>
 </html>

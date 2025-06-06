@@ -1,15 +1,16 @@
-
 {# app/templates/shared/_form_field.html #}
 {# Macro para renderizar un campo de formulario con etiqueta y errores #}
-{% macro render_field(field, label_visible=True, **kwargs) %}
+{% macro render_field(field, label_visible=True) %} {# Eliminado **kwargs de la firma #}
     <div class="form-group {% if field.errors %}has-error{% endif %}">
         {% if label_visible and field.label %}
             {{ field.label(class="form-label") }}
             {% if field.flags.required %}<span class="required-indicator"></span>{% endif %}
         {% endif %}
-        
+
+        {# Renderiza el campo, pasando la clase por defecto y cualquier argumento extra #}
+        {# La variable 'kwargs' aquí contiene automáticamente los argumentos de palabra clave pasados a la llamada de la macro #}
         {{ field(class="form-control" + (" is-invalid" if field.errors else ""), **kwargs) }}
-        
+
         {% if field.errors %}
             <div class="invalid-feedback">
                 {% for error in field.errors %}
@@ -17,7 +18,7 @@
                 {% endfor %}
             </div>
         {% endif %}
-        
+
         {% if field.description %}
             <small class="form-text text-muted">{{ field.description }}</small>
         {% endif %}

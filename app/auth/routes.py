@@ -1,15 +1,20 @@
 from flask import render_template, redirect, url_for, flash, request, abort
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.urls import url_parse
-from flask_wtf import FlaskForm # Importar FlaskForm
-from wtforms import PasswordField, SubmitField # Importar campos necesarios
-from wtforms.validators import DataRequired, Length, EqualTo # Importar validadores necesarios
+from urllib.parse import urlparse # Cambiar importación de werkzeug.urls a urllib.parse
+from flask_wtf import FlaskForm
+from wtforms import PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, EqualTo
 from app import db
-from app.models import Usuario, RolUsuario # Importar RolUsuario si se usa directamente en rutas (ej. para verificar roles)
-from . import auth # . es el directorio actual (auth)
-from .forms import LoginForm, RegistrationForm # Reutilizaremos RegistrationForm para editar
-from .services import create_user, get_user_by_username, get_user_by_id, get_all_users, update_user, delete_user, reset_password, activate_user, deactivate_user # Importar todas las funciones de servicio
-from app.utils.decorators import role_required # Importar el decorador de roles
+from app.models import Usuario, RolUsuario
+from . import auth
+from .forms import LoginForm, RegistrationForm
+from .services import create_user, get_user_by_username, get_user_by_id, get_all_users, update_user, delete_user, reset_password, activate_user, deactivate_user
+from app.utils.decorators import role_required
+
+# Roles permitidos para la gestión de usuarios (CRUD completo)
+ROLES_USUARIOS_ADMIN = [RolUsuario.ADMINISTRADOR]
+
+# --- Rutas de Autenticación y Gestión de Usuarios ---
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -28,7 +33,7 @@ def login():
         # Redirigir a la página solicitada originalmente o al index
         next_page = request.args.get('next')
         # Validar next_page para prevenir ataques de redirección abierta
-        if not next_page or url_parse(next_page).netloc != '':
+        if not next_page or urlparse(next_page).netloc != '': # Usar urlparse en lugar de url_parse
             next_page = url_for('main.index')
         return redirect(next_page)
     return render_template('auth/login.html', title='Iniciar Sesión', form=form)
@@ -89,15 +94,12 @@ def editar_usuario(user_id):
         flash('Usuario no encontrado.', 'warning')
         return redirect(url_for('auth.listar_usuarios'))
 
-    # Usamos RegistrationForm para editar, pero ajustamos validadores si es necesario
-    # Por ejemplo, no requerir la contraseña si no se va a cambiar
-    form = RegistrationForm(obj=user) # Pre-llenar el formulario con datos del usuario
+    # Reutilizar RegistrationForm, pero pre-llenarlo con datos del usuario
+    # y posiblemente deshabilitar campos que no deben editarse (ej. username)
+    form = RegistrationForm(obj=user) # Pre-llenar formulario con datos del usuario
 
-    # Eliminar validadores de contraseña para la edición si no se cambia
-    # La lógica para cambiar contraseña se manejará en otra ruta o un campo opcional
-    del form.password
-    del form.password2
-    # Si el username no debe ser editable, hacerlo de solo lectura en la plantilla
+    # Si no quieres que se edite el username, puedes deshabilitar el campo
+    # form.username.render_kw = {'readonly': True}
     # o eliminar el validador unique si se permite cambiarlo (requiere lógica adicional)
     # form.username.validators = [DataRequired(), Length(min=3, max=80)] # Ejemplo si se quita unique
 
@@ -194,6 +196,7 @@ def reset_password_usuario(user_id):
             flash(f'Contraseña para usuario "{updated_user.username}" reseteada exitosamente.', 'success')
             return redirect(url_for('auth.listar_usuarios'))
         else:
+            # reset_password retorna None si el usuario no existe o hay un error interno
             flash('Error al resetear contraseña.', 'danger')
             # Mantener al usuario en la página de reset para corregir
             return render_template('auth/reset_password.html', title='Resetear Contraseña', form=form, user=user)

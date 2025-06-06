@@ -1,6 +1,9 @@
 <header class="site-header">
     <div class="container">
-        <a href="{{ url_for('main.index') }}" class="site-header__logo">🐔 Pollería Montiel</a>
+        {# Reemplazar el texto del logo con una etiqueta img #}
+        <a href="{{ url_for('main.index') }}" class="site-header__logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ config.NOMBRE_NEGOCIO }}" class="site-logo"> {# Usar la variable config para el alt text #}
+        </a>
         <nav class="site-header__nav">
             <button class="menu-toggle" aria-label="Toggle navigation">
                 ☰ <!-- Icono de hamburguesa simple -->
@@ -8,15 +11,17 @@
             <ul class="nav-menu"> {# Añadir una clase para el menú #}
                 {% if current_user and current_user.is_authenticated %}
                     <li><a href="{{ url_for('main.index') }}">Inicio</a></li>
-                    <li><a href="{{ url_for('pedidos.listar_pedidos') if 'pedidos.listar_pedidos' in config['ROUTES'] else '#' }}">Pedidos</a></li>
+                    {# Verificar si la ruta existe en config['ROUTES'] antes de crear el enlace #}
+                    <li><a href="{{ url_for('pedidos.dashboard_pedidos') if 'pedidos.dashboard_pedidos' in config['ROUTES'] else '#' }}">Pedidos</a></li>
                     <li><a href="{{ url_for('caja.dashboard_caja') if 'caja.dashboard_caja' in config['ROUTES'] else '#' }}">Caja</a></li>
 
-                    {% if current_user.has_role('ADMINISTRADOR') %}
+                    {# Usar el método is_admin() del modelo Usuario #}
+                    {% if current_user.is_admin() %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle">Admin ▾</a>
                             <ul class="dropdown-menu">
                                 <li><a href="{{ url_for('clientes.listar_clientes') if 'clientes.listar_clientes' in config['ROUTES'] else '#' }}">Clientes</a></li>
-                                <li><a href="{{ url_for('productos.listar_productos') if 'productos.listar_productos' in config['ROUTES'] else '#' }}">Productos</a></li>
+                                <li><a href="{{ url_for('productos.dashboard_productos') if 'productos.dashboard_productos' in config['ROUTES'] else '#' }}">Productos</a></li>
                                 <li><a href="{{ url_for('auth.listar_usuarios') if 'auth.listar_usuarios' in config['ROUTES'] else '#' }}">Usuarios</a></li>
                                 <!-- <li><a href="#">Configuración</a></li> -->
                             </ul>
@@ -32,6 +37,13 @@
     </div>
 </header>
 <style>
+/* Estilos básicos para el logo */
+.site-logo {
+    height: 40px; /* Ajusta la altura según sea necesario */
+    width: auto; /* Mantiene la proporción */
+    vertical-align: middle; /* Alinea verticalmente con el texto si hay */
+}
+
 /* Estilos básicos para dropdown en nav (mejorar según sea necesario) */
 .site-header__nav .dropdown {
     position: relative;
@@ -41,90 +53,37 @@
     display: inline-block;
     margin-left: .255em;
     vertical-align: .255em;
+    content: "";
+    border-top: .3em solid;
+    border-right: .3em solid transparent;
+    border-bottom: 0;
+    border-left: .3em solid transparent;
 }
+
+/* Estilos para el menú desplegable (dropdown-menu) */
+/* Estos estilos son para el estado inicial (oculto en mobile, visible en hover en desktop) */
+/* Los estilos específicos para mobile (display: none por defecto, display: flex con JS)
+   y desktop (display: none por defecto, display: block en hover) se manejan en estilo.css y estilo_desktop.css */
 .site-header__nav .dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: var(--z-index-dropdown);
-    min-width: 10rem;
-    padding: .5rem 0;
-    margin: .125rem 0 0;
-    font-size: 1rem;
-    color: var(--gris-oscuro);
-    text-align: left;
     list-style: none;
-    background-color: var(--blanco);
-    background-clip: padding-box;
-    border: 1px solid rgba(0,0,0,.15);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--sombra-md);
+    padding: 0;
+    margin: 0;
 }
+
+.site-header__nav .dropdown-menu li {
+    border-bottom: none; /* Eliminar borde inferior en ítems de dropdown */
+}
+
 .site-header__nav .dropdown-menu a {
-    display: block;
-    width: 100%;
-    padding: .5rem 1rem;
-    clear: both;
-    font-weight: 400;
-    color: var(--gris-oscuro);
-    text-align: inherit;
-    white-space: nowrap;
-    background-color: transparent;
-    border: 0;
+    padding: .5rem 1rem; /* Ajustar padding para ítems de dropdown */
+    color: var(--gris-oscuro); /* Color de texto */
+    background-color: transparent; /* Fondo transparente */
+    font-weight: 400; /* Menos bold */
 }
+
 .site-header__nav .dropdown-menu a:hover {
-    color: var(--rojo-principal);
-    background-color: var(--gris-muy-claro);
-    text-decoration: none;
-}
-.site-header__nav .dropdown:hover .dropdown-menu {
-    display: block;
-}
-/* Estilos para el botón de menú en móviles */
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--gris-oscuro);
-}
-.nav-menu {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-@media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
-    }
-    .site-header__nav ul {
-        display: none;
-        flex-direction: column;
-        width: 100%;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background-color: var(--blanco);
-        border: 1px solid rgba(0,0,0,.15);
-        border-radius: var(--border-radius-md);
-        box-shadow: var(--sombra-md);
-    }
-    .site-header__nav ul.show {
-        display: flex;
-    }
-    .site-header__nav .dropdown {
-        width: 100%;
-    }
-    .site-header__nav .dropdown-menu {
-        position: static;
-        width: 100%;
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        margin: 0;
-    }
+    background-color: var(--gris-muy-claro); /* Fondo al pasar el mouse */
+    color: var(--rojo-principal); /* Color de texto al pasar el mouse */
 }
 </style>
 <script>

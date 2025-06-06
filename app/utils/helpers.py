@@ -6,7 +6,7 @@ from typing import Union, List, Tuple # Importar tipos necesarios
 # Ten cuidado con las importaciones circulares si models.py importa helpers.py
 # Si models.py importa helpers.py, importa los modelos dentro de las funciones que los necesiten
 # Asumiendo que models.py NO importa helpers.py, la importación a nivel superior está bien para type hints
-from app.models import PedidoItem, ProductoAdicional, RolUsuario # Asumiendo que estos modelos existen y RolUsuario es un Enum
+# from app.models import PedidoItem, ProductoAdicional, RolUsuario # Eliminar esta importación de nivel superior
 
 def format_currency(value: Union[Decimal, None]) -> str:
     """Formatea un valor Decimal como moneda MXN."""
@@ -30,8 +30,12 @@ def format_date(d: Union[date, None]) -> str: # Usar type hint date
     # Ejemplo de formato: "05/06/2025"
     return d.strftime('%d/%m/%Y')
 
-def format_pedido_item_description(item: Union[PedidoItem, None]) -> str:
+# Usar referencias de cadena para los type hints de modelos
+def format_pedido_item_description(item: Union['PedidoItem', None]) -> str:
     """Formatea la descripción de un PedidoItem para mostrar en mensajes/tickets."""
+    # Importar el modelo dentro de la función
+    from app.models import PedidoItem
+
     if not item:
         return "Ítem de pedido no válido" # Manejar ítem None
 
@@ -52,8 +56,12 @@ def format_pedido_item_description(item: Union[PedidoItem, None]) -> str:
     # Ejemplo: "- 0.500 kg Pulpa de Pechuga Molida: $92.50"
     return f"- {quantity_formatted} {item.unidad_medida} {item.descripcion_item_venta}: {subtotal_formatted}"
 
-def format_producto_adicional_description(pa: Union[ProductoAdicional, None]) -> str:
+# Usar referencias de cadena para los type hints de modelos
+def format_producto_adicional_description(pa: Union['ProductoAdicional', None]) -> str:
     """Formatea la descripción de un ProductoAdicional para mostrar en mensajes/tickets."""
+    # Importar el modelo dentro de la función
+    from app.models import ProductoAdicional
+
     if not pa:
         return "Producto adicional no válido" # Manejar pa None
 
@@ -86,6 +94,9 @@ def format_pedido_folio(pedido_id: Union[int, None]) -> str:
 
 def format_role_name(role_value: Union[str, None]) -> str:
     """Formatea el valor del rol a un nombre legible."""
+    # Importar el Enum dentro de la function
+    from app.models import RolUsuario
+
     if not role_value:
         return "Sin Rol"
     try:

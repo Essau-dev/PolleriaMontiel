@@ -50,7 +50,8 @@ class FormaPago(enum.Enum):
     AJUSTE_EGRESO_CAJA = 'AJUSTE_EGRESO_CAJA'
     SALDO_INICIAL_CAJA = 'SALDO_INICIAL_CAJA'
     RETIRO_EFECTIVO_CAJA = 'RETIRO_EFECTIVO_CAJA'
-    EFECTIVO_CONTRA_ENTREGA = 'EFECTIVO_CONTRA_ENTREGA' # Añadido para claridad en pedidos a domicilio
+    EFECTIVO_CONTRA_ENTREGA = 'EFECTIVO_CONTRA_ENTREGA'
+
 
 class EstadoPedido(enum.Enum):
     PENDIENTE_CONFIRMACION = 'PENDIENTE_CONFIRMACION'
@@ -61,7 +62,7 @@ class EstadoPedido(enum.Enum):
     EN_RUTA = 'EN_RUTA'
     ENTREGADO_PENDIENTE_PAGO = 'ENTREGADO_PENDIENTE_PAGO'
     ENTREGADO_Y_PAGADO = 'ENTREGADO_Y_PAGADO'
-    PAGADO = 'PAGADO'
+    PAGADO = 'PAGADO' # Estado general de pago completado
     PROBLEMA_EN_ENTREGA = 'PROBLEMA_EN_ENTREGA'
     REPROGRAMADO = 'REPROGRAMADO'
     CANCELADO_POR_CLIENTE = 'CANCELADO_POR_CLIENTE'
@@ -76,20 +77,18 @@ class EstadoCorteCaja(enum.Enum):
     CERRADO_CONCILIADO = 'CERRADO_CONCILIADO'
     CERRADO_CON_DIFERENCIA = 'CERRADO_CON_DIFERENCIA'
 
-
 # --- Modelo Usuario ---
 @login_manager.user_loader
 def load_user(user_id):
     """Carga un usuario dado su ID para Flask-Login."""
-    # Asegurarse de que el ID es un entero
+    # user_id viene como string, convertir a int
     if user_id is not None:
         return Usuario.query.get(int(user_id))
     return None
 
 class Usuario(UserMixin, db.Model):
     """
-    Modelo para representar a los usuarios del sistema (empleados).
-    Define roles y métodos de autenticación.
+    Almacena la información de los empleados que pueden acceder y operar el sistema.
     """
     __tablename__ = 'usuarios'
     id = db.Column(db.Integer, primary_key=True)
@@ -109,8 +108,9 @@ class Usuario(UserMixin, db.Model):
 
 
     def __repr__(self):
-        return f'<Usuario {self.username} ({self.rol.value})>' # Usar .value para mostrar el string
+        return f'<Usuario {self.username} - Rol: {self.rol.value}>' # Usar .value para el Enum
 
+    # Métodos sugeridos (Sección 3.1)
     def set_password(self, password):
         """Genera y establece el hash de la contraseña."""
         self.password_hash = generate_password_hash(password)
@@ -119,47 +119,24 @@ class Usuario(UserMixin, db.Model):
         """Verifica si la contraseña proporcionada coincide con el hash almacenado."""
         return check_password_hash(self.password_hash, password)
 
-    # Helper para roles (usando Enum)
-    def has_role(self, role_name):
-        """Verifica si el usuario tiene un rol específico."""
-        # Aceptar tanto el string como el Enum
-        if isinstance(role_name, str):
-             try:
-                 # Convertir el string a Enum para comparación segura
-                 role_enum = RolUsuario[role_name.upper()]
-             except KeyError:
-                 # Si el string no es un nombre de Enum válido, el usuario no tiene ese rol
-                 return False
-        elif isinstance(role_name, RolUsuario):
-             role_enum = role_name
-        else:
-             # Si no es string ni Enum, no es un rol válido para verificar
-             return False
-        return self.rol == role_enum
-
-    # Métodos sugeridos (Sección 3.1)
+    # Métodos helper para verificar roles (Sección 3.1)
     def is_admin(self):
-        """Verifica si el usuario es Administrador."""
-        return self.has_role(RolUsuario.ADMINISTRADOR)
+        return self.rol == RolUsuario.ADMINISTRADOR
 
     def is_cajero(self):
-        """Verifica si el usuario es Cajero."""
-        return self.has_role(RolUsuario.CAJERO)
+        return self.rol == RolUsuario.CAJERO
 
     def is_tablajero(self):
-        """Verifica si el usuario es Tablajero."""
-        return self.has_role(RolUsuario.TABLAJERO)
+        return self.rol == RolUsuario.TABLAJERO
 
     def is_repartidor(self):
-        """Verifica si el usuario es Repartidor."""
-        return self.has_role(RolUsuario.REPARTIDOR)
+        return self.rol == RolUsuario.REPARTIDOR
 
 
 # --- Modelo Cliente ---
 class Cliente(db.Model):
     """
-    Modelo para representar a los clientes de Pollería Montiel.
-    Almacena información de contacto y tipo de cliente.
+    Almacena la información de los clientes de Pollería Montiel.
     """
     __tablename__ = 'clientes'
     id = db.Column(db.Integer, primary_key=True)
@@ -177,30 +154,30 @@ class Cliente(db.Model):
     pedidos = db.relationship('Pedido', back_populates='cliente', lazy='dynamic')
 
     def __repr__(self):
-        return f'<Cliente {self.id}: {self.nombre} {self.apellidos or ""} ({self.tipo_cliente.value})>' # Usar .value
+        return f'<Cliente {self.id}: {self.nombre} {self.apellidos or ""}>'
 
     # Métodos sugeridos (Sección 3.2)
     def get_nombre_completo(self):
-        """Retorna el nombre completo del cliente (nombre + apellidos)."""
-        return f"{self.nombre} {self.apellidos or ''}".strip()
+        """Retorna nombre y apellidos concatenados."""
+        if self.apellidos:
+            return f"{self.nombre} {self.apellidos}"
+        return self.nombre
 
     def get_telefono_principal(self):
-        """Retorna el objeto Telefono marcado como principal para este cliente."""
-        # Implementar lógica para obtener el teléfono principal
-        # Asume que solo hay uno principal o toma el primero si hay varios marcados
+        """Retorna el teléfono marcado como principal."""
+        # Asumiendo que solo uno puede ser principal por lógica de aplicación
         return self.telefonos.filter_by(es_principal=True).first()
 
     def get_direccion_principal(self):
-        """Retorna el objeto Direccion marcado como principal para este cliente."""
-        # Implementar lógica para obtener la dirección principal
-        # Asume que solo hay una principal o toma la primera si hay varias marcadas
+        """Retorna la dirección marcada como principal."""
+        # Asumiendo que solo una puede ser principal por lógica de aplicación
         return self.direcciones.filter_by(es_principal=True).first()
 
 
 # --- Modelo Telefono (Sección 3.3) ---
 class Telefono(db.Model):
     """
-    Modelo para almacenar números de teléfono asociados a un cliente.
+    Almacena los números de teléfono asociados a un cliente.
     """
     __tablename__ = 'telefonos_cliente'
     id = db.Column(db.Integer, primary_key=True)
@@ -215,17 +192,16 @@ class Telefono(db.Model):
     # Constraints
     __table_args__ = (
         UniqueConstraint('cliente_id', 'numero_telefono', name='uq_cliente_numero_telefono'),
-        # Lógica para asegurar un solo es_principal=True por cliente se maneja a nivel de aplicación
     )
 
     def __repr__(self):
-        return f'<Telefono {self.numero_telefono} ({self.tipo_telefono.value}) para Cliente {self.cliente_id}>' # Usar .value
+        return f'<Telefono {self.id}: {self.numero_telefono} ({self.tipo_telefono.value}) - Cliente {self.cliente_id}>' # Usar .value
 
 
 # --- Modelo Direccion (Sección 3.4) ---
 class Direccion(db.Model):
     """
-    Modelo para almacenar direcciones asociadas a un cliente.
+    Almacena las direcciones asociadas a un cliente.
     """
     __tablename__ = 'direcciones_cliente'
     id = db.Column(db.Integer, primary_key=True)
@@ -236,23 +212,18 @@ class Direccion(db.Model):
     codigo_postal = db.Column(db.String(10), nullable=True, index=True)
     referencias = db.Column(db.Text, nullable=True)
     tipo_direccion = db.Column(Enum(TipoDireccion), nullable=False, default=TipoDireccion.CASA, index=True) # Usar Enum
-    latitud = db.Column(Numeric(10, 7), nullable=True) # Usar Numeric para coordenadas
-    longitud = db.Column(Numeric(10, 7), nullable=True) # Usar Numeric para coordenadas
+    latitud = db.Column(Numeric(10, 7), nullable=True) # Usar Numeric para precisión
+    longitud = db.Column(Numeric(10, 7), nullable=True) # Usar Numeric para precisión
     es_principal = db.Column(db.Boolean, nullable=False, default=False, index=True)
 
     # Relaciones
     cliente = db.relationship('Cliente', back_populates='direcciones')
 
-    # Constraints
-    __table_args__ = (
-        # Lógica para asegurar un solo es_principal=True por cliente se maneja a nivel de aplicación
-    )
-
     def __repr__(self):
-        return f'<Direccion {self.id}: {self.calle_numero}, {self.colonia} para Cliente {self.cliente_id}>'
+        return f'<Direccion {self.id}: {self.calle_numero}, {self.colonia}, {self.ciudad} - Cliente {self.cliente_id}>'
 
 
-# --- Modelo Producto (completado según Sección 3.5) ---
+# --- Modelo Producto (Sección 3.5) ---
 class Producto(db.Model):
     """
     Catálogo de los productos principales de pollo.
@@ -292,11 +263,23 @@ class Subproducto(db.Model):
     producto_padre = db.relationship('Producto', back_populates='subproductos')
     modificaciones_aplicables = db.relationship('Modificacion', secondary='subproducto_modificacion_association', back_populates='subproductos_asociados', lazy='dynamic')
     precios = db.relationship('Precio', foreign_keys='Precio.subproducto_id', back_populates='subproducto_base', lazy='dynamic', cascade='all, delete-orphan')
-    items_pedido = db.relationship('PedidoItem', foreign_keys='PedidoItem.subproducto_id', back_populates='subproducto', lazy='dynamic')
+    items_pedido = db.relationship('PedidoItem', back_populates='subproducto', lazy='dynamic') # <-- Asegurar que sea 'subproducto' aquí
 
 
     def __repr__(self):
-        return f'<Subproducto {self.codigo_subprod}: {self.nombre}>'
+        return f'<Subproducto {self.id}: {self.nombre} ({self.codigo_subprod}) - Padre: {self.producto_padre_id}>'
+
+
+# --- Tablas de Asociación para Modificaciones (Many-to-Many) (Sección 3.7) ---
+producto_modificacion_association = db.Table('producto_modificacion_association',
+    db.Column('producto_id', db.String(10), db.ForeignKey('productos.id'), primary_key=True),
+    db.Column('modificacion_id', db.Integer, db.ForeignKey('modificaciones.id'), primary_key=True)
+)
+
+subproducto_modificacion_association = db.Table('subproducto_modificacion_association',
+    db.Column('subproducto_id', db.Integer, db.ForeignKey('subproductos.id'), primary_key=True),
+    db.Column('modificacion_id', db.Integer, db.ForeignKey('modificaciones.id'), primary_key=True)
+)
 
 
 # --- Modelo Modificacion (Sección 3.7) ---
@@ -318,19 +301,7 @@ class Modificacion(db.Model):
 
 
     def __repr__(self):
-        return f'<Modificacion {self.codigo_modif}: {self.nombre}>'
-
-
-# --- Tablas de Asociación para Modificaciones (Many-to-Many) (Sección 3.7) ---
-producto_modificacion_association = db.Table('producto_modificacion_association',
-    db.Column('producto_id', db.String(10), db.ForeignKey('productos.id'), primary_key=True),
-    db.Column('modificacion_id', db.Integer, db.ForeignKey('modificaciones.id'), primary_key=True)
-)
-
-subproducto_modificacion_association = db.Table('subproducto_modificacion_association',
-    db.Column('subproducto_id', db.Integer, db.ForeignKey('subproductos.id'), primary_key=True),
-    db.Column('modificacion_id', db.Integer, db.ForeignKey('modificaciones.id'), primary_key=True)
-)
+        return f'<Modificacion {self.id}: {self.nombre} ({self.codigo_modif})>'
 
 
 # --- Modelo Precio (Sección 3.8) ---
@@ -358,12 +329,12 @@ class Precio(db.Model):
     __table_args__ = (
         CheckConstraint('(producto_id IS NOT NULL AND subproducto_id IS NULL) OR (producto_id IS NULL AND subproducto_id IS NOT NULL)', name='chk_precio_target'),
         UniqueConstraint('producto_id', 'tipo_cliente', 'cantidad_minima_kg', name='uq_precio_prod'),
-        UniqueConstraint('subproducto_id', 'tipo_cliente', 'cantidad_minima_kg', name='uq_precio_subprod'),
+        UniqueConstraint('subproducto_id', 'tipo_cliente', 'cantidad_minima_kg', name='uq_precio_subprod')
     )
 
     def __repr__(self):
-        target = self.producto_base.nombre if self.producto_id else self.subproducto_base.nombre
-        return f'<Precio {self.id}: {target} ({self.tipo_cliente.value}) - ${self.precio_kg}/kg desde {self.cantidad_minima_kg}kg>' # Usar .value
+        target = f'Prod:{self.producto_id}' if self.producto_id else f'Subprod:{self.subproducto_id}'
+        return f'<Precio {self.id}: {target} - Cliente: {self.tipo_cliente.value} - Min: {self.cantidad_minima_kg}kg - ${self.precio_kg:.2f}/kg>' # Usar .value
 
 
 # --- Modelo Pedido (Sección 3.9) ---
@@ -458,7 +429,8 @@ class PedidoItem(db.Model):
     # Relaciones
     pedido = db.relationship('Pedido', back_populates='items')
     producto = db.relationship('Producto', foreign_keys=[producto_id], back_populates='items_pedido')
-    subproducto = db.relationship('Subproducto', foreign_keys=[subproducto_id], back_populates='subproducto', lazy='dynamic') # Corregido back_populates
+    # CORRECCIÓN: Eliminar lazy='dynamic' de la relación many-to-one
+    subproducto = db.relationship('Subproducto', foreign_keys=[subproducto_id], back_populates='items_pedido')
     modificacion_aplicada = db.relationship('Modificacion', back_populates='items_pedido')
 
     # Constraints
@@ -519,12 +491,12 @@ class MovimientoCaja(db.Model):
     """
     __tablename__ = 'movimientos_caja'
     id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False, index=True) # Usuario que registra o es responsable
-    pedido_id = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=True, index=True) # Pedido asociado (si aplica)
-    corte_caja_id = db.Column(db.Integer, db.ForeignKey('cortes_caja.id'), nullable=True, index=True) # Corte de caja asociado (una vez cerrado)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False, index=True)
+    pedido_id = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=True, index=True)
+    corte_caja_id = db.Column(db.Integer, db.ForeignKey('cortes_caja.id'), nullable=True, index=True)
     tipo_movimiento = db.Column(Enum(TipoMovimientoCaja), nullable=False, index=True) # Usar Enum
     motivo_movimiento = db.Column(db.String(255), nullable=False)
-    monto_movimiento = db.Column(Numeric(10, 2), nullable=False, index=True) # Monto absoluto, usar Numeric
+    monto_movimiento = db.Column(Numeric(10, 2), nullable=False, index=True) # Usar Numeric
     forma_pago_efectuado = db.Column(Enum(FormaPago), nullable=False, index=True) # Usar Enum
     fecha_movimiento = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     notas_movimiento = db.Column(db.Text, nullable=True)
@@ -533,23 +505,22 @@ class MovimientoCaja(db.Model):
     usuario_responsable = db.relationship('Usuario', back_populates='movimientos_caja_registrados')
     pedido_asociado = db.relationship('Pedido', back_populates='movimientos_caja_asociados')
     corte_caja_asignado = db.relationship('CorteCaja', back_populates='movimientos_del_corte')
-    detalle_denominaciones = db.relationship('MovimientoDenominacion', back_populates='movimiento_caja_padre', lazy='dynamic', cascade='all, delete-orphan') # Solo para efectivo
-
+    detalle_denominaciones = db.relationship('MovimientoDenominacion', back_populates='movimiento_caja_padre', lazy='dynamic', cascade='all, delete-orphan') # Solo si forma_pago_efectuado es 'EFECTIVO'
 
     def __repr__(self):
-        return f'<MovimientoCaja {self.id} - {self.tipo_movimiento.value} {self.monto_movimiento:.2f} ({self.forma_pago_efectuado.value})>' # Usar .value
+        return f'<MovimientoCaja {self.id}: {self.tipo_movimiento.value} ${self.monto_movimiento:.2f} - {self.motivo_movimiento}>' # Usar .value
 
 
 # --- Modelo MovimientoDenominacion (Sección 3.13) ---
 class MovimientoDenominacion(db.Model):
     """
-    Detalla la cantidad de cada billete y moneda involucrada en un MovimientoCaja en efectivo.
+    Detalla la cantidad de cada billete y moneda involucrada en un MovimientoCaja realizado en efectivo.
     """
     __tablename__ = 'movimiento_denominaciones'
     id = db.Column(db.Integer, primary_key=True)
     movimiento_caja_id = db.Column(db.Integer, db.ForeignKey('movimientos_caja.id'), nullable=False, index=True)
-    denominacion_valor = db.Column(Numeric(10, 2), nullable=False, index=True) # Valor del billete/moneda, usar Numeric
-    cantidad = db.Column(db.Integer, nullable=False) # Cantidad de billetes/monedas
+    denominacion_valor = db.Column(Numeric(10, 2), nullable=False, index=True) # Usar Numeric
+    cantidad = db.Column(db.Integer, nullable=False) # Número de billetes/monedas
 
     # Relaciones
     movimiento_caja_padre = db.relationship('MovimientoCaja', back_populates='detalle_denominaciones')
@@ -560,7 +531,7 @@ class MovimientoDenominacion(db.Model):
     )
 
     def __repr__(self):
-        return f'<MovDenom {self.id} - Movimiento {self.movimiento_caja_id}: {self.cantidad} x ${self.denominacion_valor:.2f}>'
+        return f'<MovDenom {self.id}: Mov {self.movimiento_caja_id} - ${self.denominacion_valor:.2f} x {self.cantidad}>'
 
 
 # --- Modelo CorteCaja (Sección 3.14) ---
@@ -570,7 +541,7 @@ class CorteCaja(db.Model):
     """
     __tablename__ = 'cortes_caja'
     id = db.Column(db.Integer, primary_key=True)
-    usuario_id_responsable = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False, index=True) # Usuario que realiza el corte
+    usuario_id_responsable = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False, index=True)
     fecha_apertura_periodo = db.Column(db.DateTime, nullable=False, index=True)
     fecha_cierre_corte = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     saldo_inicial_efectivo_teorico = db.Column(Numeric(10, 2), nullable=False) # Usar Numeric
@@ -582,30 +553,30 @@ class CorteCaja(db.Model):
     total_ingresos_tarjeta_periodo = db.Column(Numeric(10, 2), nullable=False, default=0.0) # Usar Numeric
     total_ingresos_transfer_periodo = db.Column(Numeric(10, 2), nullable=False, default=0.0) # Usar Numeric
     total_ingresos_otros_periodo = db.Column(Numeric(10, 2), nullable=False, default=0.0) # Usar Numeric
+    # CORRECCIÓN: Cambiar EstadoCaja.ABIERTO a EstadoCorteCaja.ABIERTO
     estado_corte = db.Column(Enum(EstadoCorteCaja), nullable=False, default=EstadoCorteCaja.ABIERTO, index=True) # Usar Enum
     notas_corte = db.Column(db.Text, nullable=True)
 
     # Relaciones
     usuario_responsable_corte = db.relationship('Usuario', back_populates='cortes_caja_realizados')
-    movimientos_del_corte = db.relationship('MovimientoCaja', back_populates='corte_caja_asignado', lazy='dynamic') # Movimientos incluidos en este corte
-    detalle_denominaciones_cierre = db.relationship('DenominacionCorteCaja', back_populates='corte_caja_padre', lazy='dynamic', cascade='all, delete-orphan') # Conteo físico al cierre
-
+    movimientos_del_corte = db.relationship('MovimientoCaja', back_populates='corte_caja_asignado', lazy='dynamic')
+    detalle_denominaciones_cierre = db.relationship('DenominacionCorteCaja', back_populates='corte_caja_padre', lazy='dynamic', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<CorteCaja {self.id} - Usuario {self.usuario_id_responsable} - Estado: {self.estado_corte.value}>' # Usar .value
+        return f'<CorteCaja {self.id}: Fecha Cierre: {self.fecha_cierre_corte.strftime("%Y-%m-%d %H:%M")} - Diferencia: ${self.diferencia_efectivo:.2f}>'
 
 
 # --- Modelo DenominacionCorteCaja (Sección 3.15) ---
 class DenominacionCorteCaja(db.Model):
     """
-    Detalla el conteo físico de cada billete y moneda al realizar un CorteCaja.
+    Detalla el conteo físico de cada billete y moneda al momento de realizar un CorteCaja.
     """
     __tablename__ = 'corte_caja_denominaciones'
     id = db.Column(db.Integer, primary_key=True)
     corte_caja_id = db.Column(db.Integer, db.ForeignKey('cortes_caja.id'), nullable=False, index=True)
-    denominacion_valor = db.Column(Numeric(10, 2), nullable=False, index=True) # Valor del billete/moneda contado, usar Numeric
-    cantidad_contada = db.Column(db.Integer, nullable=False) # Cantidad contada físicamente
-    total_por_denominacion = db.Column(Numeric(10, 2), nullable=False) # Calculado: valor * cantidad, usar Numeric
+    denominacion_valor = db.Column(Numeric(10, 2), nullable=False, index=True) # Usar Numeric
+    cantidad_contada = db.Column(db.Integer, nullable=False)
+    total_por_denominacion = db.Column(Numeric(10, 2), nullable=False) # Usar Numeric
 
     # Relaciones
     corte_caja_padre = db.relationship('CorteCaja', back_populates='detalle_denominaciones_cierre')
@@ -616,7 +587,7 @@ class DenominacionCorteCaja(db.Model):
     )
 
     def __repr__(self):
-        return f'<DenomCorte {self.id} - Corte {self.corte_caja_id}: {self.cantidad_contada} x ${self.denominacion_valor:.2f}>'
+        return f'<DenomCorte {self.id}: Corte {self.corte_caja_id} - ${self.denominacion_valor:.2f} x {self.cantidad_contada}>'
 
 
 # --- Modelo ConfiguracionSistema (Sección 3.16) ---
@@ -644,4 +615,4 @@ class ConfiguracionSistema(db.Model):
     )
 
     def __repr__(self):
-        return f'<ConfiguracionSistema {self.nombre_negocio}>'
+        return f'<ConfiguracionSistema id={self.id}>'
