@@ -1,119 +1,68 @@
 <header class="site-header">
     <div class="container">
-        {# Reemplazar el texto del logo con una etiqueta img #}
+        {# Logo del negocio #}
         <a href="{{ url_for('main.index') }}" class="site-header__logo">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ config.NOMBRE_NEGOCIO }}" class="site-logo"> {# Usar la variable config para el alt text #}
+            {# Usar la variable config para el alt text del logo #}
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="{{ config.NOMBRE_NEGOCIO }}" class="site-logo">
         </a>
         <nav class="site-header__nav">
-            <button class="menu-toggle" aria-label="Toggle navigation">
+            {# Botón para el menú hamburguesa (visible solo en mobile) #}
+            <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navMenu">
                 ☰ <!-- Icono de hamburguesa simple -->
             </button>
-            <ul class="nav-menu"> {# Añadir una clase para el menú #}
+            {# Menú de navegación principal #}
+            <ul class="nav-menu" id="navMenu"> {# Añadir ID para referenciar con JS #}
+                {# Verificar si el usuario está autenticado para mostrar opciones #}
                 {% if current_user and current_user.is_authenticated %}
-                    <li><a href="{{ url_for('main.index') }}">Inicio</a></li>
-                    {# Verificar si la ruta existe en config['ROUTES'] antes de crear el enlace #}
-                    <li><a href="{{ url_for('pedidos.dashboard_pedidos') if 'pedidos.dashboard_pedidos' in config['ROUTES'] else '#' }}">Pedidos</a></li>
-                    <li><a href="{{ url_for('caja.dashboard_caja') if 'caja.dashboard_caja' in config['ROUTES'] else '#' }}">Caja</a></li>
+                    {# Enlace a Inicio #}
+                    {# Usar request.endpoint para marcar el enlace activo #}
+                    <li class="{{ 'active' if request.endpoint == 'main.index' }}">
+                        <a href="{{ url_for('main.index') }}">Inicio</a>
+                    </li>
+                    {# Enlace a Pedidos #}
+                    {# Verificar si el endpoint actual pertenece al blueprint 'pedidos' #}
+                    <li class="{{ 'active' if request.endpoint.startswith('pedidos.') }}">
+                        <a href="{{ url_for('pedidos.dashboard_pedidos') }}">Pedidos</a>
+                    </li>
+                    {# Enlace a Caja #}
+                     {# Verificar si el endpoint actual pertenece al blueprint 'caja' #}
+                    <li class="{{ 'active' if request.endpoint.startswith('caja.') }}">
+                        <a href="{{ url_for('caja.dashboard_caja') }}">Caja</a>
+                    </li>
 
+                    {# Menú Dropdown para Administrador #}
                     {# Usar el método is_admin() del modelo Usuario #}
                     {% if current_user.is_admin() %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle">Admin ▾</a>
+                        {# Verificar si el endpoint actual pertenece a los blueprints de Admin #}
+                        <li class="dropdown {{ 'active' if request.endpoint.startswith(('clientes.', 'productos.', 'auth.')) }}">
+                            {# El enlace del dropdown no navega, solo abre/cierra el submenú #}
+                            <a href="#" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">Admin ▾</a>
                             <ul class="dropdown-menu">
-                                <li><a href="{{ url_for('clientes.listar_clientes') if 'clientes.listar_clientes' in config['ROUTES'] else '#' }}">Clientes</a></li>
-                                <li><a href="{{ url_for('productos.dashboard_productos') if 'productos.dashboard_productos' in config['ROUTES'] else '#' }}">Productos</a></li>
-                                <li><a href="{{ url_for('auth.listar_usuarios') if 'auth.listar_usuarios' in config['ROUTES'] else '#' }}">Usuarios</a></li>
-                                <!-- <li><a href="#">Configuración</a></li> -->
+                                {# Enlaces del submenú Admin #}
+                                <li class="{{ 'active' if request.endpoint.startswith('clientes.') }}">
+                                    <a href="{{ url_for('clientes.listar_clientes') }}">Clientes</a>
+                                </li>
+                                <li class="{{ 'active' if request.endpoint.startswith('productos.') }}">
+                                    <a href="{{ url_for('productos.dashboard_productos') }}">Productos</a>
+                                </li>
+                                <li class="{{ 'active' if request.endpoint.startswith('auth.') }}">
+                                    <a href="{{ url_for('auth.listar_usuarios') }}">Usuarios</a>
+                                </li>
+                                {# <li><a href="#">Configuración</a></li> #}
                             </ul>
                         </li>
                     {% endif %}
+                    {# Enlace para Cerrar Sesión #}
                     <li><a href="{{ url_for('auth.logout') }}">Cerrar Sesión ({{ current_user.username }})</a></li>
                 {% else %}
-                    <li><a href="{{ url_for('auth.login') }}">Iniciar Sesión</a></li>
-                    <!-- <li><a href="{{ url_for('auth.registro_usuario') }}">Registrar (Admin)</a></li> -->
+                    {# Enlace para Iniciar Sesión (visible si no está autenticado) #}
+                    <li class="{{ 'active' if request.endpoint == 'auth.login' }}">
+                        <a href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
+                    </li>
+                    {# Opcional: Enlace para Registro (solo si se permite registro público o para Admin) #}
+                    {# <li><a href="{{ url_for('auth.registro_usuario') }}">Registrar (Admin)</a></li> #}
                 {% endif %}
             </ul>
         </nav>
     </div>
 </header>
-<style>
-/* Estilos básicos para el logo */
-.site-logo {
-    height: 40px; /* Ajusta la altura según sea necesario */
-    width: auto; /* Mantiene la proporción */
-    vertical-align: middle; /* Alinea verticalmente con el texto si hay */
-}
-
-/* Estilos básicos para dropdown en nav (mejorar según sea necesario) */
-.site-header__nav .dropdown {
-    position: relative;
-}
-.site-header__nav .dropdown-toggle::after {
-    /* content: ' ▼'; */ /* Se añade directamente en el HTML para más control */
-    display: inline-block;
-    margin-left: .255em;
-    vertical-align: .255em;
-    content: "";
-    border-top: .3em solid;
-    border-right: .3em solid transparent;
-    border-bottom: 0;
-    border-left: .3em solid transparent;
-}
-
-/* Estilos para el menú desplegable (dropdown-menu) */
-/* Estos estilos son para el estado inicial (oculto en mobile, visible en hover en desktop) */
-/* Los estilos específicos para mobile (display: none por defecto, display: flex con JS)
-   y desktop (display: none por defecto, display: block en hover) se manejan en estilo.css y estilo_desktop.css */
-.site-header__nav .dropdown-menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.site-header__nav .dropdown-menu li {
-    border-bottom: none; /* Eliminar borde inferior en ítems de dropdown */
-}
-
-.site-header__nav .dropdown-menu a {
-    padding: .5rem 1rem; /* Ajustar padding para ítems de dropdown */
-    color: var(--gris-oscuro); /* Color de texto */
-    background-color: transparent; /* Fondo transparente */
-    font-weight: 400; /* Menos bold */
-}
-
-.site-header__nav .dropdown-menu a:hover {
-    background-color: var(--gris-muy-claro); /* Fondo al pasar el mouse */
-    color: var(--rojo-principal); /* Color de texto al pasar el mouse */
-}
-</style>
-<script>
-// Pequeño script para el dropdown si se prefiere control JS en lugar de :hover
-// document.addEventListener('DOMContentLoaded', function() {
-//     const dropdowns = document.querySelectorAll('.site-header__nav .dropdown');
-//     dropdowns.forEach(function(dropdown) {
-//         const toggle = dropdown.querySelector('.dropdown-toggle');
-//         const menu = dropdown.querySelector('.dropdown-menu');
-//         if (toggle && menu) {
-//             toggle.addEventListener('click', function(event) {
-//                 event.preventDefault();
-//                 menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-//             });
-//             // Opcional: cerrar si se hace clic fuera
-//             document.addEventListener('click', function(event) {
-//                 if (!dropdown.contains(event.target)) {
-//                     menu.style.display = 'none';
-//                 }
-//             });
-//         }
-//     });
-// });
-document.addEventListener('DOMContentLoaded', function() {
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-    if (menuToggle && navMenu) {
-        menuToggle.addEventListener('click', function() {
-            navMenu.classList.toggle('show');
-        });
-    }
-});
-</script>

@@ -1,7 +1,6 @@
 <footer class="site-footer">
     <div class="container">
-        {# Usar la variable 'now' inyectada globalmente por el context processor #}
-        <p>© {{ now.year if now else '2024' }} {{ config.NOMBRE_NEGOCIO }}. Todos los derechos reservados.</p>
-        <p>Sistema de Gestión SGPM v0.1 (MVP)</p>
+        {# Usar la variable config para el nombre del negocio #}
+        <p>&copy; {{ now.year }} . Todos los derechos reservados. <br> Sistema de Gestión SGPM v0.1 (MVP)</p>
     </div>
 </footer>

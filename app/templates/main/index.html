@@ -16,11 +16,205 @@
             <p>Tu rol es: <strong>{{ current_user.rol.value }}</strong>.</p>
             <p>Desde aquí podrás acceder a las principales funcionalidades del sistema.</p>
 
-            <div class="d-flex" style="gap: 1rem; margin-top: 1.5rem;">
-                <a href="{{ url_for('pedidos.crear_pedido') if 'pedidos.crear_pedido' in config['ROUTES'] else '#' }}" class="btn btn--primary btn--lg">Nuevo Pedido</a>
-                <a href="{{ url_for('caja.registrar_movimiento') if 'caja.registrar_movimiento' in config['ROUTES'] else '#' }}" class="btn btn--secondary btn--lg">Movimiento de Caja</a>
+            {# Sección de Acciones Rápidas #}
+            <div class="d-flex flex-wrap" style="gap: 1rem; margin-top: 1.5rem;">
+                {# Botón Nuevo Pedido (para Cajero y Admin) #}
+                {% if current_user.is_cajero() or current_user.is_admin() %}
+                    <a href="{{ url_for('pedidos.crear_pedido') }}" class="btn btn--primary btn--lg">Nuevo Pedido</a>
+                {% endif %}
+                {# Botón Movimiento de Caja (para Cajero y Admin) #}
+                 {% if current_user.is_cajero() or current_user.is_admin() %}
+                    <a href="{{ url_for('caja.registrar_movimiento') }}" class="btn btn--secondary btn--lg">Movimiento de Caja</a>
+                 {% endif %}
+                 {# Botón Apertura de Caja (para Cajero y Admin, si no hay caja abierta) #}
+                 {# La lógica para verificar si hay caja abierta se manejaría en la ruta y se pasaría como variable #}
+                 {% if current_user.is_cajero() or current_user.is_admin() %}
+                     {# {% if not caja_abierta %} #}
+                     {# <a href="{{ url_for('caja.abrir_caja') }}" class="btn btn--success btn--lg">Abrir Caja</a> #}
+                     {# {% endif %} #}
+                 {% endif %}
+                 {# Botón Realizar Corte de Caja (para Cajero y Admin, si hay caja abierta) #}
+                 {% if current_user.is_cajero() or current_user.is_admin() %}
+                     {# {% if caja_abierta %} #}
+                     {# <a href="{{ url_for('caja.realizar_corte') }}" class="btn btn--warning btn--lg">Realizar Corte</a> #}
+                     {# {% endif %} #}
+                 {% endif %}
             </div>
-        {% else %}
+
+            {# Sección de Información del Dashboard por Rol #}
+            <div class="dashboard-info mt-xl">
+                <h2>Resumen Rápido</h2>
+
+                {# Información para Administrador #}
+                {% if current_user.is_admin() %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card--dashboard"> {# Clase CSS para tarjetas de dashboard #}
+                                <div class="card__header">
+                                    <h3 class="card__title">Ventas del Día</h3>
+                                </div>
+                                <div class="card__body">
+                                    {# Estas variables (total_ventas_dia, num_pedidos_dia) deben ser pasadas desde la ruta #}
+                                    <p>Total Ventas (Hoy): <strong>
+                                        {% if total_ventas_dia is defined and total_ventas_dia is not none %}
+                                            {{ total_ventas_dia | format_currency }}
+                                        {% else %}
+                                            {{ format_currency(0) }}
+                                        {% endif %}
+                                    </strong></p>
+                                    <p>Pedidos Registrados (Hoy): <strong>{{ num_pedidos_dia if num_pedidos_dia is not none else 0 }}</strong></p>
+                                    {# CORRECCIÓN: Usar el endpoint correcto para la lista de pedidos #}
+                                    <p><a href="{{ url_for('pedidos.dashboard_pedidos') }}">Ver todos los pedidos</a></p>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="col-md-6">
+                            <div class="card card--dashboard">
+                                <div class="card__header">
+                                    <h3 class="card__title">Estado de Cajas</h3>
+                                </div>
+                                <div class="card__body">
+                                    {# Esta variable (saldos_cajas_abiertas) debe ser pasada desde la ruta #}
+                                    {% if saldos_cajas_abiertas %}
+                                        <ul>
+                                            {% for usuario, saldo in saldos_cajas_abiertas.items() %}
+                                                <li>Caja de {{ usuario }}: <strong>{{ saldo | format_currency }}</strong></li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p>No hay cajas abiertas actualmente.</p>
+                                    {% endif %}
+                                    <p><a href="{{ url_for('caja.listar_cortes') }}">Ver historial de cortes</a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Podrías añadir más secciones para Admin: usuarios activos, resumen de productos, etc. #}
+
+                {# Información para Cajero #}
+                {% elif current_user.is_cajero() %}
+                     <div class="row">
+                        <div class="col-md-6">
+                            <div class="card card--dashboard">
+                                <div class="card__header">
+                                    <h3 class="card__title">Tu Caja Actual</h3>
+                                </div>
+                                <div class="card__body">
+                                    {# Estas variables (caja_abierta, saldo_caja_actual) deben ser pasadas desde la ruta #}
+                                    {% if caja_abierta %}
+                                        <p>Estado: <span class="status-indicator status-indicator--success">Abierta</span></p>
+                                        <p>Saldo Teórico Actual: <strong>{{ saldo_caja_actual | format_currency if saldo_caja_actual is not none else format_currency(0) }}</strong></p>
+                                        {# Enlace a movimientos de su caja actual #}
+                                        <p><a href="{{ url_for('caja.listar_movimientos', corte_id=caja_abierta.id) }}">Ver movimientos de esta caja</a></p>
+                                    {% else %}
+                                        <p>Tu caja no está abierta.</p>
+                                        <p><a href="{{ url_for('caja.abrir_caja') }}" class="btn btn--success btn--sm">Abrir Caja</a></p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                         <div class="col-md-6">
+                            <div class="card card--dashboard">
+                                <div class="card__header">
+                                    <h3 class="card__title">Tus Pedidos Pendientes</h3>
+                                </div>
+                                <div class="card__body">
+                                    {# Esta variable (tus_pedidos_pendientes) debe ser pasada desde la ruta #}
+                                    {% if tus_pedidos_pendientes %}
+                                        <ul>
+                                            {% for pedido in tus_pedidos_pendientes %}
+                                                <li>Pedido #{{ pedido.generar_folio_display() }} ({{ pedido.estado_pedido.value }}) - {{ pedido.cliente.nombre if pedido.cliente else 'Mostrador' }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {# CORRECCIÓN: Usar el endpoint correcto para la lista de pedidos, aplicando filtros si es necesario #}
+                                        <p><a href="{{ url_for('pedidos.dashboard_pedidos', user_id=current_user.id, status='PENDIENTE_PREPARACION,LISTO_PARA_ENTREGA') }}">Ver todos tus pedidos pendientes</a></p>
+                                    {% else %}
+                                        <p>No tienes pedidos pendientes asignados.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Podrías añadir resumen de ventas del día del cajero, etc. #}
+
+                {# Información para Tablajero #}
+                {% elif current_user.is_tablajero() %}
+                     <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card--dashboard">
+                                <div class="card__header">
+                                    <h3 class="card__title">Pedidos Pendientes de Preparación</h3>
+                                </div>
+                                <div class="card__body">
+                                    {# Esta variable (pedidos_para_preparar) debe ser pasada desde la ruta #}
+                                    {% if pedidos_para_preparar %}
+                                        <ul class="list-group"> {# Usar clases de lista de grupo si están definidas en CSS #}
+                                            {% for pedido in pedidos_para_preparar %}
+                                                <li class="list-group-item">
+                                                    Pedido #{{ pedido.generar_folio_display() }} - Cliente: {{ pedido.cliente.nombre if pedido.cliente else 'Mostrador' }}
+                                                    <br>
+                                                    Items:
+                                                    <ul>
+                                                        {% for item in pedido.items %}
+                                                            <li>- {{ item.cantidad }} {{ item.unidad_medida }} {{ item.descripcion_item_venta }}</li>
+                                                        {% endfor %}
+                                                        {% for pa in pedido.productos_adicionales_pedido %}
+                                                             <li>- {{ pa.cantidad_pa }} {{ pa.unidad_medida_pa }} {{ pa.nombre_pa }} (PA)</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                    <a href="{{ url_for('pedidos.ver_pedido', pedido_id=pedido.id) }}" class="btn btn--sm btn--secondary mt-s">Ver Detalles y Preparar</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p>No hay pedidos pendientes de preparación en este momento.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Podrías añadir un resumen de ítems a preparar consolidados #}
+
+                {# Información para Repartidor #}
+                {% elif current_user.is_repartidor() %}
+                     <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card--dashboard">
+                                <div class="card__header">
+                                    <h3 class="card__title">Tus Pedidos Asignados</h3>
+                                </div>
+                                <div class="card__body">
+                                    {# Esta variable (tus_pedidos_asignados) debe ser pasada desde la ruta #}
+                                    {% if tus_pedidos_asignados %}
+                                        <ul class="list-group">
+                                            {% for pedido in tus_pedidos_asignados %}
+                                                <li class="list-group-item">
+                                                    Pedido #{{ pedido.generar_folio_display() }} - Cliente: {{ pedido.cliente.nombre_completo if pedido.cliente else 'N/A' }}
+                                                    <br>
+                                                    Dirección: {{ pedido.direccion_entrega.calle_numero if pedido.direccion_entrega else 'N/A' }}
+                                                    <br>
+                                                    Total a Cobrar: <strong>{{ pedido.total_pedido | format_currency }}</strong>
+                                                    <br>
+                                                    Estado: <span class="status-indicator status-indicator--{{ pedido.estado_pedido.name | lower | replace('_', '-') }}">{{ pedido.estado_pedido.value }}</span> {# Usar el nombre del enum para la clase CSS #}
+                                                    <br>
+                                                    <a href="{{ url_for('pedidos.ver_pedido', pedido_id=pedido.id) }}" class="btn btn--sm btn--primary mt-s">Ver Detalles y Gestionar Entrega</a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p>No tienes pedidos asignados para entrega en este momento.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Podrías añadir un resumen del total a liquidar #}
+
+                {% endif %} {# Fin del if current_user.rol #}
+
+            </div> {# Fin .dashboard-info #}
+
+        {% else %} {# Si el usuario NO está autenticado #}
             <p>Por favor, <a href="{{ url_for('auth.login') }}">inicia sesión</a> para continuar.</p>
         {% endif %}
     </div>

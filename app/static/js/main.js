@@ -43,60 +43,56 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Lógica para el menú hamburguesa en móvil
+    // Lógica para el menú hamburguesa (mobile)
     const menuToggle = document.querySelector('.menu-toggle');
-    const navMenu = document.querySelector('.nav-menu');
-    const dropdownToggles = document.querySelectorAll('.site-header__nav .dropdown-toggle');
+    const navMenu = document.getElementById('navMenu');
 
     if (menuToggle && navMenu) {
         menuToggle.addEventListener('click', function() {
-            navMenu.classList.toggle('is-open');
-            // Cerrar dropdowns si el menú principal se cierra
-            if (!navMenu.classList.contains('is-open')) {
-                 dropdownToggles.forEach(toggle => {
-                     const dropdown = toggle.closest('.dropdown');
-                     if (dropdown) {
-                         dropdown.classList.remove('is-open');
-                     }
-                 });
-            }
+            const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+            menuToggle.setAttribute('aria-expanded', !isExpanded);
+            navMenu.classList.toggle('is-open'); // Usar una clase para controlar la visibilidad
         });
     }
 
-    // Lógica para abrir/cerrar dropdowns en móvil (al hacer clic en el toggle)
+    // Lógica para dropdowns en la navegación (desktop y mobile)
+    const dropdownToggles = document.querySelectorAll('.site-header__nav .dropdown-toggle');
+
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
-            // Prevenir la navegación por defecto si el enlace es '#'
-            if (toggle.getAttribute('href') === '#') {
-                 event.preventDefault();
-            }
-            const dropdown = toggle.closest('.dropdown');
-            if (dropdown) {
-                // Cerrar otros dropdowns abiertos en el mismo nivel
-                dropdowns.forEach(otherDropdown => {
-                    if (otherDropdown !== dropdown) {
-                        otherDropdown.classList.remove('is-open');
+            event.preventDefault(); // Prevenir la navegación por defecto del enlace
+            const parentDropdown = toggle.closest('.dropdown');
+            if (parentDropdown) {
+                // Cerrar otros dropdowns abiertos (opcional, para evitar múltiples abiertos)
+                document.querySelectorAll('.site-header__nav .dropdown.is-open').forEach(openDropdown => {
+                    if (openDropdown !== parentDropdown) {
+                        openDropdown.classList.remove('is-open');
+                        const openToggle = openDropdown.querySelector('.dropdown-toggle');
+                        if (openToggle) openToggle.setAttribute('aria-expanded', 'false');
                     }
                 });
-                dropdown.classList.toggle('is-open');
+
+                // Alternar la visibilidad del dropdown actual
+                const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+                toggle.setAttribute('aria-expanded', !isExpanded);
+                parentDropdown.classList.toggle('is-open'); // Usar una clase para controlar la visibilidad
             }
         });
     });
 
-    // Opcional: Cerrar menú y dropdowns si se hace clic fuera (en móvil)
+    // Cerrar dropdowns al hacer clic fuera de ellos
     document.addEventListener('click', function(event) {
-        const header = document.querySelector('.site-header');
-        if (header && !header.contains(event.target)) {
-            if (navMenu && navMenu.classList.contains('is-open')) {
-                 navMenu.classList.remove('is-open');
-                 // Cerrar dropdowns si el menú principal se cierra
-                 dropdownToggles.forEach(toggle => {
-                     const dropdown = toggle.closest('.dropdown');
-                     if (dropdown) {
-                         dropdown.classList.remove('is-open');
-                     }
-                 });
-            }
+        if (!event.target.closest('.site-header__nav .dropdown')) {
+            document.querySelectorAll('.site-header__nav .dropdown.is-open').forEach(openDropdown => {
+                openDropdown.classList.remove('is-open');
+                const openToggle = openDropdown.querySelector('.dropdown-toggle');
+                if (openToggle) openToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+        // Cerrar menú hamburguesa si está abierto y se hace clic fuera
+        if (navMenu && navMenu.classList.contains('is-open') && !event.target.closest('.site-header__nav')) {
+             menuToggle.setAttribute('aria-expanded', 'false');
+             navMenu.classList.remove('is-open');
         }
     });
 });
