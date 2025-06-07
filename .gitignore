@@ -8,7 +8,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-.Python
+
 build/
 develop-eggs/
 dist/
@@ -46,7 +46,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
+
 .hypothesis/
 .pytest_cache/
 
@@ -63,7 +63,6 @@ local_settings.py
 # Flask stuff:
 instance/
 .webassets-cache
-app.db # Nombre de nuestra BD SQLite
 *.sqlite3 # Cualquier otra BD sqlite
 
 # Scrapy stuff:
